@@ -45,9 +45,6 @@ global_var ID3D11ShaderResourceView *TexturesSRV[4] = {};
 global_var quad_sample_instance_data QuadSampleInstanceData[100] = {};
 global_var u32 QuadSampleInstanceDataCount = 0;
 
-global_var quad_sample_vertex_data QuadSampleVertexData[100] = {};
-global_var u32 QuadSampleVertexDataCount = 0;
-
 global_var quad_fill_instance_data QuadFillInstanceData[100] = {};
 global_var u32 QuadFillInstanceDataCount = 0;
 
@@ -160,7 +157,10 @@ void Render_Init(HWND Window) {
 			{ "CENTER", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 			{ "DIMENTIONS", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 			{ "INDEX", 0, DXGI_FORMAT_R32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-			{ "TEXTCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{ "TEXTCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+			{ "TEXTCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+			{ "TEXTCOORD", 2, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+			{ "TEXTCOORD", 3, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 		};
 
 		HRESULT HResult = D3D_Device->CreateInputLayout(IED, ArraySize(IED), ShaderByteCode_QuadSampleVertex, ArraySize(ShaderByteCode_QuadSampleVertex), &QuadSample.Layout);
@@ -183,21 +183,6 @@ void Render_Init(HWND Window) {
 		Assert(QuadSample.Buffers[0]);
 	}
 
-	{
-		D3D11_BUFFER_DESC BufferDescription = {};
-		BufferDescription.Usage = D3D11_USAGE_DEFAULT;
-		BufferDescription.ByteWidth = sizeof(QuadSampleVertexData);
-		BufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		BufferDescription.CPUAccessFlags = 0;
-		BufferDescription.MiscFlags = 0;
-
-		D3D11_SUBRESOURCE_DATA InitialData = {};
-		InitialData.pSysMem = QuadSampleInstanceData;
-		HRESULT Result = D3D_Device->CreateBuffer(&BufferDescription, &InitialData, &QuadSample.Buffers[1]);
-		Assert(SUCCEEDED(Result));
-		Assert(QuadSample.Buffers[1]);
-	}
-
 	// Texture Array
 	{
 		D3D11_TEXTURE2D_DESC TextureDescription = {};
@@ -217,7 +202,7 @@ void Render_Init(HWND Window) {
 
 		Result = D3D_Device->CreateShaderResourceView(Textures[0], 0, &TexturesSRV[0]);
 		Assert(SUCCEEDED(Result));
-#if 0
+
 		Result = D3D_Device->CreateTexture2D(&TextureDescription, 0, &Textures[1]);
 		Assert(SUCCEEDED(Result));
 
@@ -235,7 +220,6 @@ void Render_Init(HWND Window) {
 
 		Result = D3D_Device->CreateShaderResourceView(Textures[3], 0, &TexturesSRV[3]);
 		Assert(SUCCEEDED(Result));
-#endif
 	}
 
 	D3D_CompileBakedVertexShader(QuadFillVertex, QuadFill.VertexShader);
@@ -270,12 +254,9 @@ void Render_Init(HWND Window) {
 
 // At a high level, we want to enqueue data and then draw it all in a batch.
 
-void Render_EnqueueQuadSample(quad_sample_vertex_data VertexData, quad_sample_instance_data InstanceData) {
+void Render_EnqueueQuadSample(quad_sample_instance_data InstanceData) {
 	QuadSampleInstanceData[QuadSampleInstanceDataCount] = InstanceData;
 	QuadSampleInstanceDataCount++;
-
-	QuadSampleVertexData[QuadSampleVertexDataCount] = VertexData;
-	QuadSampleVertexDataCount++;
 }
 
 void Render_EnqueueQuadFill(quad_fill_instance_data Data) {
@@ -382,18 +363,13 @@ void Render_Draw() {
 		D3D_DeviceCtx->IASetInputLayout(QuadSample.Layout);
 		D3D_DeviceCtx->VSSetShader(QuadSample.VertexShader, 0, 0);
 		D3D_DeviceCtx->PSSetShader(QuadSample.PixelShader, 0, 0);
-#if 0 
 		D3D_DeviceCtx->PSSetShaderResources(0, 4, TexturesSRV);
-#else
-		D3D_DeviceCtx->PSSetShaderResources(0, 1, TexturesSRV);
-#endif
 
-		u32 Stride[] = {sizeof(quad_sample_instance_data), sizeof(quad_sample_vertex_data)};
-		u32 Offset[] = {0, 0};
-		D3D_DeviceCtx->IASetVertexBuffers(0, 1, QuadSample.Buffers, Stride, Offset);
+		u32 Stride = sizeof(quad_sample_instance_data);
+		u32 Offset = 0;
+		D3D_DeviceCtx->IASetVertexBuffers(0, 1, QuadSample.Buffers, &Stride, &Offset);
 	
 		D3D_UpdateBuffer(QuadSample.Buffers[0], QuadSampleInstanceData, 0, sizeof(QuadSampleInstanceData));
-		D3D_UpdateBuffer(QuadSample.Buffers[1], QuadSampleVertexData, 0, sizeof(QuadSampleVertexData));
 
 		D3D_DeviceCtx->OMSetRenderTargets(1, &RenderTargetView, 0);
 

@@ -1,4 +1,4 @@
-#include "External/HandmadeMath.h"
+ #include "External/HandmadeMath.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "External/stb_image.h"
 #undef STB_IMAGE_IMPLEMENTATION
@@ -119,17 +119,13 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 
 	Render_EnqueueQuadSample(
 	  {
-		  {
-			  hmm_v2{0.0, 0.0},
-			  hmm_v2{1.0, 0.0},
-			  hmm_v2{0.0, 1.0},
-			  hmm_v2{1.0, 1.0},
-		  }
-	  },
-	  {
 			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
 			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			0
+			0,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
 	  });
 	
 	for (s32 Index = 0; Index < ArraySize(EntityList); Index++) {
