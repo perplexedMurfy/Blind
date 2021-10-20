@@ -69,7 +69,6 @@ struct game_state {
 	u32 *TileMap[MapHeight][MapWidth];
 } GameState;
 
-
 /**
  * Checks the tilemap for colision, displaces the entity out of solid tiles if nessary.
  *
@@ -97,7 +96,7 @@ s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, u32* TileMap[][MapWi
 			//height is counted from the bottom of the tile,
 			//while subTile.Y is counted from the top.
 			s32 FarDown = 32 - SubTile.Y;
-			if (Height >= FarDown) {
+			if (SubTile.Y < Height) {
 				return Length - Index;
 			}
 		}
@@ -113,7 +112,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		
 		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_RenderRect | EFLAG_DoGravity | EFLAG_SimMovement  | EFLAG_CollideWithMap;
 		EntityList[0].Position = {32, 128};
-		EntityList[0].Dimentions = {32, 48};
+		EntityList[0].Dimentions = {32, 32};
 		EntityList[0].Color = {1.0, 0.5, 0};
 		memcpy(GameState.TileMap, TEST_TILE_MAP, sizeof(TEST_TILE_MAP));
 		InitMap(GameState.TileMap);
@@ -131,7 +130,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 	  {
 			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
 			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			1
+			0
 	  });
 	
 	for (s32 Index = 0; Index < ArraySize(EntityList); Index++) {
@@ -139,23 +138,23 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		
 		if (Entity->Flags & EFLAG_Controlled) {
 			if (InputState.Current.Right) {
-				Entity->Velocity.X = 80;
+				Entity->Velocity.X = 120;
 			}
 			else if (InputState.Current.Left) {
-				Entity->Velocity.X = -80;
+				Entity->Velocity.X = -120;
 			}
 			else {
 				Entity->Velocity.X = 0;
 			}
 		
 			if (InputState.Current.Up && !InputState.Prevous.Up && Entity->Grounded) {
-				Entity->Velocity.Y = 150;
+				Entity->Velocity.Y = 300;
 			}
 		}
 	
 		if (Entity->Flags & EFLAG_DoGravity) {
 			if (!Entity->Grounded) {
-				Entity->Acceleration.Y = -200;
+				Entity->Acceleration.Y = -600;
 			}
 			else {
 				Entity->Acceleration.Y = 0;
@@ -176,7 +175,13 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		
 			// Torso: push us out of walls
 			{ // Left Torso
-				int disp = MapColisionCheck ({(int)(Entity->Position.X + (Entity->Dimentions.X / 2)), (int)(Entity->Position.Y + (Entity->Dimentions.Y / 2))}, (int)(Entity->Dimentions.X / 2), {-1, 0}, GameState.TileMap);
+				int disp =
+					MapColisionCheck (
+					                  {(int)(Entity->Position.X),
+					                   (int)(Entity->Position.Y)},
+					                  (int)(Entity->Dimentions.X / 2),
+					                  {-1, 0},
+					                  GameState.TileMap);
 				if (disp) {
 					Entity->Position.X += disp;
 					Entity->Velocity.X = 0;
@@ -184,7 +189,13 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			}
 		
 			{ // Right Torso
-				int disp = MapColisionCheck ({(int)(Entity->Position.X + (Entity->Dimentions.X / 2)), (int)(Entity->Position.Y + (Entity->Dimentions.Y / 2))}, (int)(Entity->Dimentions.X / 2), {1, 0}, GameState.TileMap);
+				int disp =
+					MapColisionCheck (
+					                  {(int)(Entity->Position.X),
+					                   (int)(Entity->Position.Y)},
+					                  (int)(Entity->Dimentions.X / 2),
+					                  {1, 0},
+					                  GameState.TileMap);
 				if (disp) {
 					Entity->Position.X -= disp;
 					Entity->Velocity.X = 0;
@@ -193,27 +204,46 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			}
 		
 			//Legs
-			if (Entity->Velocity.Y >= 0) { //we need to "push up" when we are falling.
-				int deltaYr = MapColisionCheck ({(int)(Entity->Position.X + Entity->Dimentions.X - 1), (int)(Entity->Position.Y + (Entity->Dimentions.Y/2))}, (int)(Entity->Dimentions.Y/2 + 1), {0, 1}, GameState.TileMap);
-				int deltaYl = MapColisionCheck ({(int)(Entity->Position.X + 1), (int)(Entity->Position.Y + (Entity->Dimentions.Y/2))}, (int)(Entity->Dimentions.Y/2 + 1), {0, 1}, GameState.TileMap);
+			if (Entity->Velocity.Y <= 0) { //we need to "push up" when we are falling.
+				int deltaYr =
+					MapColisionCheck (
+					                  {(int)(Entity->Position.X + Entity->Dimentions.X/2 - 2),
+					                   (int)(Entity->Position.Y)},
+					                  (int)(Entity->Dimentions.Y/2 + 1),
+					                  {0, -1},
+					                  GameState.TileMap);
+				
+				int deltaYl =
+					MapColisionCheck (
+					                  {(int)(Entity->Position.X - Entity->Dimentions.X/2 + 2),
+					                   (int)(Entity->Position.Y)},
+					                  (int)(Entity->Dimentions.Y/2 + 1),
+					                  {0, -1},
+					                  GameState.TileMap);
 			
-				//TODO: I might want a dedicated ground sensor, rather than just doing this.
+				// @TODO: I might want a dedicated ground sensor, rather than just doing this.
 				if (deltaYr == 0 && deltaYl == 0) {
 					Entity->Grounded = 0;
 				}
 				else {
 					Entity->Grounded = 1;
 					Entity->Velocity.Y = 0;
-				
+					
 					if (deltaYr > deltaYl)
-						Entity->Position.Y -= deltaYr - 1;
+						Entity->Position.Y += deltaYr - 1;
 					else
-						Entity->Position.Y -= deltaYl - 1;
+						Entity->Position.Y += deltaYl - 1;
 				}
 			}
 			else { //if we're rising, we should instead push us out of walls
 				{ // Left Leg
-					int disp = MapColisionCheck ({(int)(Entity->Position.X + (Entity->Dimentions.X / 2)), (int)(Entity->Position.Y + Entity->Dimentions.Y - 1)}, (int)(Entity->Dimentions.X / 2), {-1, 0}, GameState.TileMap);
+					int disp =
+						MapColisionCheck(
+						                 {(int)(Entity->Position.X),
+						                  (int)(Entity->Position.Y - Entity->Dimentions.Y/2 + 1)},
+						                 (int)(Entity->Dimentions.X / 2),
+						                 {-1, 0},
+						                 GameState.TileMap);
 					if (disp) {
 						Entity->Position.X += disp;
 						Entity->Velocity.X = 0;
@@ -221,7 +251,13 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 				}
 			
 				{ // Right Leg
-					int disp = MapColisionCheck ({(int)(Entity->Position.X + (Entity->Dimentions.X / 2)), (int)(Entity->Position.Y + Entity->Dimentions.Y - 1)}, (int)(Entity->Dimentions.X / 2), {1, 0}, GameState.TileMap);
+					int disp =
+						MapColisionCheck (
+						                  {(int)(Entity->Position.X),
+						                   (int)(Entity->Position.Y - Entity->Dimentions.Y/2 + 1)},
+						                  (int)(Entity->Dimentions.X / 2),
+						                  {1, 0},
+						                  GameState.TileMap);
 					if (disp) {
 						Entity->Position.X -= disp;
 						Entity->Velocity.X = 0;
@@ -230,22 +266,40 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			}
 		
 			//Head
-			if (Entity->Velocity.Y <= 0) { // if we're rising, lets bonk our head.
-				int deltaYr = MapColisionCheck ({(int)(Entity->Position.X + Entity->Dimentions.X - 1), (int)(Entity->Position.Y + (Entity->Dimentions.Y/2))}, (int)(Entity->Dimentions.Y/2 + 1), {0, -1}, GameState.TileMap);
-				int deltaYl = MapColisionCheck ({(int)(Entity->Position.X + 1), (int)(Entity->Position.Y + (Entity->Dimentions.Y/2))}, (int)(Entity->Dimentions.Y/2 + 1), {0, -1}, GameState.TileMap);
+			if (Entity->Velocity.Y >= 0) { // if we're rising, lets bonk our head.
+				int deltaYr =
+					MapColisionCheck(
+					                 {(int)(Entity->Position.X + Entity->Dimentions.X/2 - 2),
+					                  (int)(Entity->Position.Y)},
+					                 (int)(Entity->Dimentions.Y/2 + 1),
+					                 {0, 1},
+					                 GameState.TileMap);
+				int deltaYl =
+					MapColisionCheck(
+					                 {(int)(Entity->Position.X - Entity->Dimentions.X/2 + 2),
+					                  (int)(Entity->Position.Y)},
+					                 (int)(Entity->Dimentions.Y/2 + 1),
+					                 {0, 1},
+					                 GameState.TileMap);
 			
 				if (deltaYr != 0 || deltaYl != 0) {
 					Entity->Velocity.Y = 0;
 				
 					if (deltaYr > deltaYl)
-						Entity->Position.Y += deltaYr;
+						Entity->Position.Y -= deltaYr;
 					else
-						Entity->Position.Y += deltaYl;
+						Entity->Position.Y -= deltaYl;
 				}
 			}
 			else { //if we're falling, lets push us out of walls.
 				{ // Left Head
-					int disp = MapColisionCheck ({(int)(Entity->Position.X + (Entity->Dimentions.X / 2)), (int)(Entity->Position.Y + Entity->Dimentions.Y - 1)}, (int)(Entity->Dimentions.X / 2), {-1, 0}, GameState.TileMap);
+					int disp =
+						MapColisionCheck(
+						                 {(int)(Entity->Position.X),
+						                  (int)(Entity->Position.Y + Entity->Dimentions.Y/2 - 1)},
+						                 (int)(Entity->Dimentions.X / 2),
+						                 {-1, 0},
+						                 GameState.TileMap);
 					if (disp) {
 						Entity->Position.X += disp;
 						Entity->Velocity.X = 0;
@@ -253,8 +307,13 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 				}
 			
 				{ // Right Head
-					int disp = MapColisionCheck ({(int)(Entity->Position.X + (Entity->Dimentions.X / 2)),
-							(int)(Entity->Position.Y + Entity->Dimentions.Y - 1)}, (int)(Entity->Dimentions.X / 2), {1, 0}, GameState.TileMap);
+					int disp =
+						MapColisionCheck(
+						                 {(int)(Entity->Position.X),
+						                  (int)(Entity->Position.Y + Entity->Dimentions.Y/2 - 1)},
+						                 (int)(Entity->Dimentions.X / 2),
+						                 {1, 0},
+						                 GameState.TileMap);
 					if (disp) {
 						Entity->Position.X -= disp;
 						Entity->Velocity.X = 0;
