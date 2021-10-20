@@ -10,10 +10,11 @@
 #include "Generated/ShaderByteCode_QuadFillVertex.h"
 #include "Generated/ShaderByteCode_QuadFillPixel.h"
 
-// @TODO I need to figure out how to pass per vertex texture mapping data in quad sample.
-// @TODO I think there is also something wrong with my shader code for selecting textures.
+// @TODO(Michael) I need to figure out how to pass per vertex texture mapping data in quad sample.
+// @TODO(Michael) I think there is also something wrong with my shader code for selecting textures.
 
 struct shader_program {
+	// @TODO(Michael) As of now (2021-10-20) we only use one buffer per shader program. We could remove the 2nd buffer but I've decided to leave it here for the time being. If this is still unused in the future feel free to remove it.
 	// [0] = Index Buffer
 	// [1] = Vertex Buffer
 	ID3D11Buffer *Buffers[2];
@@ -138,7 +139,7 @@ void Render_Init(HWND Window) {
 	}
 
 	// NOTE: Creates a RenderTargetView. We need to bookkeep this so that we can set with OMSetRenderTargets().
-	// @TODO can we set and forget with OMSetRenderTargets()?
+	// @TODO(Michael) can we set and forget with OMSetRenderTargets()?
 	{
 		ID3D11Texture2D *FrameBuffer = 0;
 		HRESULT Result = SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer);
@@ -272,7 +273,7 @@ void Render_Init(HWND Window) {
 void Render_EnqueueQuadSample(quad_sample_vertex_data VertexData, quad_sample_instance_data InstanceData) {
 	QuadSampleInstanceData[QuadSampleInstanceDataCount] = InstanceData;
 	QuadSampleInstanceDataCount++;
-	
+
 	QuadSampleVertexData[QuadSampleVertexDataCount] = VertexData;
 	QuadSampleVertexDataCount++;
 }
@@ -325,7 +326,7 @@ void Render_Draw() {
 
 		ID3D11BlendState *QuadBlendState = 0;
 		{
-			// @TODO figure out what the Srcs Dests and BlendOps should be.
+			// NOTE(Michael) I don't toally understand it, but this should allow for alphablending.
 			D3D11_BLEND_DESC BlendDesc = {};
 			BlendDesc.RenderTarget[0].BlendEnable = true;
 

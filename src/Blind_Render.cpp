@@ -1,4 +1,4 @@
-// @TODO not a good name. the name implies stuff about the backend that doesn't need to be true.
+
 struct quad_sample_instance_data {
 	hmm_v3 Center;
 	hmm_v2 Dimentions;

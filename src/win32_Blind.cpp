@@ -98,7 +98,7 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 		InputState.Current.X = Keyboard.keys['A'] & 0x80;
 		InputState.Current.Y = Keyboard.keys['S'] & 0x80;
 
-		// @TODO Actually calculate DeltaTime.
+		// @TODO(Michael) Actually calculate DeltaTime.
 		// Direct3d11 gives us v-sync by default, so we should be around 60 frames per second, so assuming deltatime is 0.016 isn't the worst thing in the world.
 		// This shouldn't be something that we're assuming though!
 		const f32 DeltaTime = 0.016f;

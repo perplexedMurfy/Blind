@@ -26,7 +26,7 @@ struct entity {
 	hmm_v2 Acceleration;
 
 	// Visual
-	// @TODO replace with texture
+	// @TODO(Michael) replace/add information about what texture this should use. Likely will be 4 texture coords and 1 index into our texture array?
 	hmm_v3 Color;
 };
 
@@ -83,7 +83,6 @@ s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, u32* TileMap[][MapWi
 	for (int Index = 1; Index <= Length; Index++) {
 		iv2 Position = {(Start.X + Index * Direction.X), (Start.Y + Index * Direction.Y)};
 
-		// @TODO Fix map. we need Y=0 to equate to TILEY=29. in essence, our map is upside down!
 		iv2 Tile = {Position.X / 32, 29 - Position.Y / 32};
 		iv2 SubTile = {Position.X % 32, Position.Y % 32};
 		
@@ -221,7 +220,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 					                  {0, -1},
 					                  GameState.TileMap);
 			
-				// @TODO: I might want a dedicated ground sensor, rather than just doing this.
+				// @TODO(Michael) I might want a dedicated ground sensor, rather than piggybacking off of our foot sensors.
 				if (deltaYr == 0 && deltaYl == 0) {
 					Entity->Grounded = 0;
 				}

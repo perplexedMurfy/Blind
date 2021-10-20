@@ -64,8 +64,6 @@ void InitMap(u32 *MapData[][40]) {
 				
 		}
 	}
-
-	// @TODO flip this texture around, pretty sure it's upside down with this generation.
 	
 	Render_UpdateTextureArray(0, (u8*)ColisionRawTextureData, WindowWidth * 4);
 	
