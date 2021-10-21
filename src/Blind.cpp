@@ -19,6 +19,7 @@ const u32 EFLAG_SimMovement = 0x4;
 const u32 EFLAG_CollideWithMap = 0x8;
 const u32 EFLAG_DoGravity = 0x10;
 const u32 EFLAG_Solid = 0x20;
+const u32 EFLAG_WinLevel = 0x40;
 
 struct entity {
 	s64 Flags;
@@ -102,8 +103,12 @@ const u32 ParticalMax = 5000;
 global_var std::vector<partical> ParticalList;
 
 struct game_state {
+	s32 CurrentLevel;
 	u32 *TileMap[MapHeight][MapWidth];
 	b8 CanDraw;
+	b8 LevelWon;
+	b8 Init;
+	
 } GameState;
 
 /**
@@ -154,12 +159,12 @@ b8 SinglePointCollisionCheck(iv2 Position, u32* TileMap[][MapWidth]) {
 	return false;
 }
 
-s32 EntityCollisionCheck(iv2 Start, s32 Length, iv2 Direction, entity CollisionEntity) {
-	s32 Top = CollisionEntity.Position.Y + CollisionEntity.Dimentions.Y/2;
-	s32 Bottom = CollisionEntity.Position.Y - CollisionEntity.Dimentions.Y/2;
+s32 EntityCollisionCheck(iv2 Start, s32 Length, iv2 Direction, entity Entity) {
+	s32 Top = Entity.Position.Y + Entity.Dimentions.Y/2;
+	s32 Bottom = Entity.Position.Y - Entity.Dimentions.Y/2;
 	
-	s32 Left = CollisionEntity.Position.X - CollisionEntity.Dimentions.X/2;
-	s32 Right = CollisionEntity.Position.X + CollisionEntity.Dimentions.X/2;
+	s32 Left = Entity.Position.X - Entity.Dimentions.X/2;
+	s32 Right = Entity.Position.X + Entity.Dimentions.X/2;
 	
 	for (int Index = 1; Index <= Length; Index++) {
 		iv2 Position = {(Start.X + Index * Direction.X), (Start.Y + Index * Direction.Y)};
@@ -173,6 +178,21 @@ s32 EntityCollisionCheck(iv2 Start, s32 Length, iv2 Direction, entity CollisionE
 	return 0;	
 }
 
+b8 IsInsideEntity(iv2 Position, entity Entity) {
+	s32 Top = Entity.Position.Y + Entity.Dimentions.Y/2;
+	s32 Bottom = Entity.Position.Y - Entity.Dimentions.Y/2;
+	
+	s32 Left = Entity.Position.X - Entity.Dimentions.X/2;
+	s32 Right = Entity.Position.X + Entity.Dimentions.X/2;
+	
+	if (Position.X > Left && Position.X < Right &&
+	    Position.Y > Bottom && Position.Y < Top) {
+		return true;
+	}
+
+	return false;
+}
+
 void SpawnPartical(hmm_v2 SpawnPoint) {
 	partical Partical = {};
 	Partical.Flags = PFLAG_DoLifeTime | PFLAG_RenderRect | PFLAG_SimMovement;
@@ -183,7 +203,7 @@ void SpawnPartical(hmm_v2 SpawnPoint) {
 	Partical.Color = hmm_v3{0, RandomFloat(0.8, 1.0), RandomFloat(0.0, 0.6)};
 	Partical.LifeTime = 0.5;
 	Partical.CurTime = 0;
-		
+	
 	ParticalList.push_back(Partical);
 }
 
@@ -208,17 +228,30 @@ void SpawnParticalAroundEntity(iv2 StartPoint, iv2 Direction, s32 Length, entity
 }
 
 void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
-
-	local_persist b8 Init = false;
-	if (!Init) {
-		Init = true;
+	if (!GameState.Init) {
+		GameState.Init = true;
+		GameState.CanDraw = false;
+		GameState.LevelWon = false;
+		
+		memset(EntityList, 0, sizeof(EntityList));
 		
 		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_RenderRect | EFLAG_CollideWithMap;
-		EntityList[0].Position = { 32, 256, 5};
+		EntityList[0].Position.XY = playerSpawn[GameState.CurrentLevel];
+		EntityList[0].Position.Z = 5;
 		EntityList[0].Dimentions = {24, 32};
 		EntityList[0].Color = {1.0, 0.5, 0.0};
-		
-		memcpy(GameState.TileMap, LEVEL_04_MAP, sizeof(LEVEL_04_MAP));
+
+		EntityList[1].Flags |= EFLAG_RenderRect | EFLAG_WinLevel;
+		EntityList[1].Position = { 1000, 256, 5};
+		EntityList[1].Dimentions = {96, 96};
+		EntityList[1].Color = {0.0, 1.0, 0.0};
+
+		if (GameState.CurrentLevel == 0) {
+			memcpy(GameState.TileMap, LEVEL_01_MAP, sizeof(LEVEL_01_MAP));
+		}
+		else if (GameState.CurrentLevel == 1) {
+			memcpy(GameState.TileMap, LEVEL_02_MAP, sizeof(LEVEL_02_MAP));
+		}
 		InitMap(GameState.TileMap);
 
 		GameState.CanDraw = true;
@@ -226,7 +259,8 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		ParticalList.reserve(ParticalMax);
 	}
 
-	// Debug TileMap
+#if 1 
+	// Debug TileMap	
 	Render_EnqueueQuadSample(
 	  {
 			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
@@ -237,6 +271,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			hmm_v2{0.0, 1.0},
 			hmm_v2{1.0, 1.0},
 	  });
+#endif
 
 	Render_EnqueueQuadSample(
 	  {
@@ -722,6 +757,18 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		if (Entity->Flags & EFLAG_Controlled) {
 			if (InputState.Current.Up && !InputState.Prevous.Up && (Entity->CanJump || Entity->Grounded)) {
 				Entity->Velocity.Y = 300;
+			}
+
+			for (s32 WinIndex = 0; WinIndex < ArraySize(EntityList); WinIndex++) {
+				entity * const WinEntity = &EntityList[WinIndex];
+				const iv2 TestPos = {(s32)Entity->Position.X, (s32)Entity->Position.Y};
+
+				if (WinEntity->Flags & EFLAG_WinLevel) {
+					if (IsInsideEntity(TestPos, *WinEntity)) {
+						GameState.CurrentLevel++;
+						GameState.Init = false;
+					}
+				}
 			}
 		}
 

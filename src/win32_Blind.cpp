@@ -78,6 +78,8 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 	ShowWindow(Window, ShowCommand);
 	
 	Render_Init(Window);
+	GameState.CurrentLevel = 0;
+	GameState.Init = false;
 
 	input_state InputState = {};
 	win32_keyboard_state Keyboard = {};

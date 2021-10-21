@@ -14,7 +14,7 @@ global_var const s32 MapHeight = 30;
 
 global_var const s32 NUMOFLEVELS = 10;
 
-const hmm_v2 playerSpawn[NUMOFLEVELS] = {{ 32, 256 },
+global_var const hmm_v2 playerSpawn[NUMOFLEVELS] = {{ 32, 256 },
 										 { 32, 256 },
 									     { 32, 256 },
 									     { 32, 256 },
@@ -26,7 +26,7 @@ const hmm_v2 playerSpawn[NUMOFLEVELS] = {{ 32, 256 },
 									     { 32, 256 },
 };
 
-const hmm_v2 winArea[NUMOFLEVELS] = {{ 32, 256 },
+global_var const hmm_v2 winArea[NUMOFLEVELS] = {{ 32, 256 },
 									 { 32, 256 },
 									 { 32, 256 },
 									 { 32, 256 },
