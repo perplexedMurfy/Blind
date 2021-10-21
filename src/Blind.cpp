@@ -185,7 +185,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		EntityList[0].Dimentions = {24, 32};
 		EntityList[0].Color = {1.0, 0.5, 0.0};
 		
-		memcpy(GameState.TileMap, TEST_TILE_MAP, sizeof(TEST_TILE_MAP));
+		memcpy(GameState.TileMap, LEVEL_01_MAP, sizeof(LEVEL_01_MAP));
 		InitMap(GameState.TileMap);
 
 		GameState.CanDraw = true;
