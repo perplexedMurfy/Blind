@@ -131,6 +131,9 @@ s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, u32* TileMap[][MapWi
 				return Length - Index;
 			}
 		}
+		else {
+			return Length - Index;
+		}
 	}
 	return 0;
 }
