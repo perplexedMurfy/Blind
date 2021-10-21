@@ -241,9 +241,10 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		EntityList[0].Dimentions = {24, 32};
 		EntityList[0].Color = {1.0, 0.5, 0.0};
 
-		EntityList[1].Flags |= EFLAG_RenderRect | EFLAG_WinLevel;
-		EntityList[1].Position = { 1000, 256, 5};
-		EntityList[1].Dimentions = {96, 96};
+		EntityList[1].Flags |= EFLAG_RenderRect; // | EFLAG_WinLevel;
+		EntityList[1].Position.XY = winArea[GameState.CurrentLevel];
+		EntityList[1].Position.Z = 6;
+		EntityList[1].Dimentions = {32 * 4, 32 * 2};
 		EntityList[1].Color = {0.0, 1.0, 0.0};
 
 		if (GameState.CurrentLevel == 0) {
@@ -251,6 +252,12 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		}
 		else if (GameState.CurrentLevel == 1) {
 			memcpy(GameState.TileMap, LEVEL_02_MAP, sizeof(LEVEL_02_MAP));
+		}
+		else if (GameState.CurrentLevel == 2) {
+			memcpy(GameState.TileMap, LEVEL_03_MAP, sizeof(LEVEL_03_MAP));
+		}
+		else if (GameState.CurrentLevel == 3) {
+			memcpy(GameState.TileMap, LEVEL_04_MAP, sizeof(LEVEL_04_MAP));
 		}
 		InitMap(GameState.TileMap);
 

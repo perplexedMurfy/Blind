@@ -117,6 +117,8 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 				Assert(false);
 			}
 
+			if (InputState.Mouse.LeftClick)
+				__debugbreak();
 			InputState.Mouse.Position = {MousePos.x, MousePos.y};
 		}
 
