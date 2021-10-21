@@ -18,6 +18,7 @@ const u32 EFLAG_RenderRect = 0x2;
 const u32 EFLAG_SimMovement = 0x4;
 const u32 EFLAG_CollideWithMap = 0x8;
 const u32 EFLAG_DoGravity = 0x10;
+const u32 EFLAG_Solid = 0x20;
 
 struct entity {
 	s64 Flags;
@@ -153,24 +154,56 @@ b8 SinglePointCollisionCheck(iv2 Position, u32* TileMap[][MapWidth]) {
 	return false;
 }
 
-void SpawnParticalAroundColision(iv2 StartPoint, iv2 Direction, s32 Length) {
+s32 EntityCollisionCheck(iv2 Start, s32 Length, iv2 Direction, entity CollisionEntity) {
+	s32 Top = CollisionEntity.Position.Y + CollisionEntity.Dimentions.Y/2;
+	s32 Bottom = CollisionEntity.Position.Y - CollisionEntity.Dimentions.Y/2;
+	
+	s32 Left = CollisionEntity.Position.X - CollisionEntity.Dimentions.X/2;
+	s32 Right = CollisionEntity.Position.X + CollisionEntity.Dimentions.X/2;
+	
+	for (int Index = 1; Index <= Length; Index++) {
+		iv2 Position = {(Start.X + Index * Direction.X), (Start.Y + Index * Direction.Y)};
+		
+		if (Position.X > Left && Position.X < Right &&
+		    Position.Y > Bottom && Position.Y < Top) {
+			return Length - Index;
+		}
+		
+	}
+	return 0;	
+}
+
+void SpawnPartical(hmm_v2 SpawnPoint) {
+	partical Partical = {};
+	Partical.Flags = PFLAG_DoLifeTime | PFLAG_RenderRect | PFLAG_SimMovement;
+	Partical.Position.XY = SpawnPoint;
+	Partical.Position.Z = 4;
+	Partical.Velocity = hmm_v2{RandomFloat(-5, 5), RandomFloat(-5, 5)};
+	Partical.Dimentions = hmm_v2{1, 1};
+	Partical.Color = hmm_v3{0, RandomFloat(0.8, 1.0), RandomFloat(0.0, 0.6)};
+	Partical.LifeTime = 0.5;
+	Partical.CurTime = 0;
+		
+	ParticalList.push_back(Partical);
+}
+
+void SpawnParticalAroundTileMap(iv2 StartPoint, iv2 Direction, s32 Length) {
 	s32 Offset = (Length - 1) - MapColisionCheck(StartPoint, Length, Direction, GameState.TileMap);
 	
 	if (Offset != (Length - 1)) {
 		hmm_v2 fOffset = {(f32)(Offset * Direction.X), (f32)(Offset * Direction.Y)};
 		hmm_v2 fStartPoint = {(f32)StartPoint.X, (f32)StartPoint.Y};
-		
-		partical Partical = {};
-		Partical.Flags = PFLAG_DoLifeTime | PFLAG_RenderRect | PFLAG_SimMovement;
-		Partical.Position.XY = fStartPoint + fOffset;
-		Partical.Position.Z = 4;
-		Partical.Velocity = hmm_v2{RandomFloat(-5, 5), RandomFloat(-5, 5)};
-		Partical.Dimentions = hmm_v2{1, 1};
-		Partical.Color = hmm_v3{0, RandomFloat(0.8, 1.0), RandomFloat(0.0, 0.6)};
-		Partical.LifeTime = 0.5;
-		Partical.CurTime = 0;
-		
-		ParticalList.push_back(Partical);
+		SpawnPartical(fStartPoint + fOffset);
+	}
+}
+
+void SpawnParticalAroundEntity(iv2 StartPoint, iv2 Direction, s32 Length, entity Entity) {
+	s32 Offset = (Length - 1) - EntityCollisionCheck(StartPoint, Length, Direction, Entity);
+	
+	if (Offset != (Length - 1)) {
+		hmm_v2 fOffset = {(f32)(Offset * Direction.X), (f32)(Offset * Direction.Y)};
+		hmm_v2 fStartPoint = {(f32)StartPoint.X, (f32)StartPoint.Y};
+		SpawnPartical(fStartPoint + fOffset);
 	}
 }
 
@@ -276,7 +309,6 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			// Now lets correct movement that has placed objects out of bounds.
 			Entity->CanJump = false;
 			Entity->Grounded = false; // assume that we are in the air. set otherwise if our legs collide with anything.
-			
 		
 			// Torso: push us out of walls
 			{ // Left Torso
@@ -296,7 +328,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 							(s32)(Entity->Position.X - Entity->Dimentions.X/2),
 							(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
 						};
-						SpawnParticalAroundColision(CheckPos, {-1, 0}, 4);
+						SpawnParticalAroundTileMap(CheckPos, {-1, 0}, 4);
 					}
 				}
 			}
@@ -318,7 +350,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 							(s32)(Entity->Position.X + Entity->Dimentions.X/2),
 							(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
 						};
-						SpawnParticalAroundColision(CheckPos, {1, 0}, 4);
+						SpawnParticalAroundTileMap(CheckPos, {1, 0}, 4);
 					}
 				}
 			}
@@ -342,7 +374,6 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 					                  GameState.TileMap);
 				
 				if (deltaYr == 0 && deltaYl == 0) {
-					Entity->Grounded = false;
 				}
 				else {
 					Entity->Velocity.Y = 0;
@@ -358,7 +389,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 							(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
 							(s32)(Entity->Position.Y - Entity->Dimentions.Y/2)
 						};
-						SpawnParticalAroundColision(CheckPos, {0, -1}, 8);
+						SpawnParticalAroundTileMap(CheckPos, {0, -1}, 8);
 					}
 					
 				}
@@ -445,7 +476,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 						iv2 CheckPos = {
 							(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
 							(s32)(Entity->Position.Y + Entity->Dimentions.Y/2)};
-						SpawnParticalAroundColision(CheckPos, {0, 1}, 3);
+						SpawnParticalAroundTileMap(CheckPos, {0, 1}, 3);
 					}
 				}
 			}
@@ -478,6 +509,214 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 					}
 				}
 			}
+
+			// Entity Collision
+			for (s32 CollisionIndex = 0; CollisionIndex  < ArraySize(EntityList); CollisionIndex++) {
+				entity * const CollisionEntity = &EntityList[CollisionIndex];
+				if (CollisionEntity->Flags & EFLAG_Solid) {
+					// Torso: push us out of walls
+					{ // Left Torso
+						int disp =
+							EntityCollisionCheck (
+							                  {(int)(Entity->Position.X),
+							                   (int)(Entity->Position.Y)},
+							                  (int)(Entity->Dimentions.X / 2),
+							                  {-1, 0},
+							                  *CollisionEntity);
+						if (disp) {
+							Entity->Position.X += disp;
+							Entity->Velocity.X = 0;
+
+							for (s32 Count = 0; Count < 6; Count++) {
+								iv2 CheckPos = {
+									(s32)(Entity->Position.X - Entity->Dimentions.X/2),
+									(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
+								};
+								SpawnParticalAroundEntity(CheckPos, {-1, 0}, 4, *CollisionEntity);
+							}
+						}
+					}
+		
+					{ // Right Torso
+						int disp =
+							EntityCollisionCheck (
+							                  {(int)(Entity->Position.X),
+							                   (int)(Entity->Position.Y)},
+							                  (int)(Entity->Dimentions.X / 2),
+							                  {1, 0},
+							                  *CollisionEntity);
+						if (disp) {
+							Entity->Position.X -= disp;
+							Entity->Velocity.X = 0;
+
+							for (s32 Count = 0; Count < 6; Count++) {
+								iv2 CheckPos = {
+									(s32)(Entity->Position.X + Entity->Dimentions.X/2),
+									(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
+								};
+								SpawnParticalAroundEntity(CheckPos, {1, 0}, 4, *CollisionEntity);
+							}
+						}
+					}
+		
+					//Legs
+					if (Entity->Velocity.Y <= 0) { //we need to "push up" when we are falling.
+						int deltaYr =
+							EntityCollisionCheck (
+							                  {(int)(Entity->Position.X + Entity->Dimentions.X/2 - 2),
+							                   (int)(Entity->Position.Y)},
+							                  (int)(Entity->Dimentions.Y/2 + 1),
+							                  {0, -1},
+							                  *CollisionEntity);
+				
+						int deltaYl =
+							EntityCollisionCheck (
+							                  {(int)(Entity->Position.X - Entity->Dimentions.X/2 + 2),
+							                   (int)(Entity->Position.Y)},
+							                  (int)(Entity->Dimentions.Y/2 + 1),
+							                  {0, -1},
+							                  *CollisionEntity);
+				
+						if (deltaYr == 0 && deltaYl == 0) {
+							Entity->Grounded = false;
+						}
+						else {
+							Entity->Velocity.Y = 0;
+							Entity->Grounded = true;
+					
+							if (deltaYr > deltaYl)
+								Entity->Position.Y += deltaYr - 1;
+							else
+								Entity->Position.Y += deltaYl - 1;
+
+							for (s32 Count = 0; Count < 6; Count++) {
+								iv2 CheckPos = {
+									(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
+									(s32)(Entity->Position.Y - Entity->Dimentions.Y/2)
+								};
+								SpawnParticalAroundEntity(CheckPos, {0, -1}, 8, *CollisionEntity);
+							}
+					
+						}
+					}
+					else { //if we're rising, we should instead push us out of walls
+						{ // Left Leg
+							int disp =
+								EntityCollisionCheck(
+								                 {(int)(Entity->Position.X),
+								                  (int)(Entity->Position.Y - Entity->Dimentions.Y/2 + 1)},
+								                 (int)(Entity->Dimentions.X / 2),
+								                 {-1, 0},
+								                 *CollisionEntity);
+							if (disp) {
+								Entity->Position.X += disp;
+								Entity->Velocity.X = 0;
+							}
+						}
+			
+						{ // Right Leg
+							int disp =
+								EntityCollisionCheck (
+								                  {(int)(Entity->Position.X),
+								                   (int)(Entity->Position.Y - Entity->Dimentions.Y/2 + 1)},
+								                  (int)(Entity->Dimentions.X / 2),
+								                  {1, 0},
+								                  *CollisionEntity);
+							if (disp) {
+								Entity->Position.X -= disp;
+								Entity->Velocity.X = 0;
+							}
+						}
+					}
+
+					// Can Jump
+					if (Entity->Velocity.Y <= 0) {
+						int DeltaYr =
+							EntityCollisionCheck (
+							                  {(int)(Entity->Position.X + Entity->Dimentions.X/2 - 2),
+							                   (int)(Entity->Position.Y)},
+							                  (int)(Entity->Dimentions.Y/2 + 12),
+							                  {0, -1},
+							                  *CollisionEntity);
+				
+						int DeltaYl =
+							EntityCollisionCheck (
+							                  {(int)(Entity->Position.X - Entity->Dimentions.X/2 + 2),
+							                   (int)(Entity->Position.Y)},
+							                  (int)(Entity->Dimentions.Y/2 + 12),
+							                  {0, -1},
+							                  *CollisionEntity);
+
+						if (DeltaYl != 0 || DeltaYr != 0) {
+							Entity->CanJump = true;
+						}
+					}
+		
+					//Head
+					if (Entity->Velocity.Y >= 0) { // if we're rising, lets bonk our head.
+						int deltaYr =
+							EntityCollisionCheck(
+							                 {(int)(Entity->Position.X + Entity->Dimentions.X/2 - 2),
+							                  (int)(Entity->Position.Y)},
+							                 (int)(Entity->Dimentions.Y/2 + 1),
+							                 {0, 1},
+							                 *CollisionEntity);
+						int deltaYl =
+							EntityCollisionCheck(
+							                 {(int)(Entity->Position.X - Entity->Dimentions.X/2 + 2),
+							                  (int)(Entity->Position.Y)},
+							                 (int)(Entity->Dimentions.Y/2 + 1),
+							                 {0, 1},
+							                 *CollisionEntity);
+			
+						if (deltaYr != 0 || deltaYl != 0) {
+							Entity->Velocity.Y = 0;
+				
+							if (deltaYr > deltaYl)
+								Entity->Position.Y -= deltaYr;
+							else
+								Entity->Position.Y -= deltaYl;
+
+							for (s32 Count = 0; Count < 40; Count++) {
+								iv2 CheckPos = {
+									(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
+									(s32)(Entity->Position.Y + Entity->Dimentions.Y/2)};
+								SpawnParticalAroundEntity(CheckPos, {0, 1}, 3, *CollisionEntity);
+							}
+						}
+					}
+					else { //if we're falling, lets push us out of walls.
+						{ // Left Head
+							int disp =
+								EntityCollisionCheck(
+								                 {(int)(Entity->Position.X),
+								                  (int)(Entity->Position.Y + Entity->Dimentions.Y/2 - 1)},
+								                 (int)(Entity->Dimentions.X / 2),
+								                 {-1, 0},
+								                 *CollisionEntity);
+							if (disp) {
+								Entity->Position.X += disp;
+								Entity->Velocity.X = 0;
+							}
+						}
+			
+						{ // Right Head
+							int disp =
+								EntityCollisionCheck(
+								                 {(int)(Entity->Position.X),
+								                  (int)(Entity->Position.Y + Entity->Dimentions.Y/2 - 1)},
+								                 (int)(Entity->Dimentions.X / 2),
+								                 {1, 0},
+								                 *CollisionEntity);
+							if (disp) {
+								Entity->Position.X -= disp;
+								Entity->Velocity.X = 0;
+							}
+						}
+					}
+				}
+			}
+			
 		}
 
 		if (Entity->Flags & EFLAG_Controlled) {
