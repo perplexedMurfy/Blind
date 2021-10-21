@@ -178,7 +178,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		Init = true;
 		
 		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_RenderRect | EFLAG_CollideWithMap;
-		EntityList[0].Position = {32, 128, 5};
+		EntityList[0].Position = { 32, 256, 5};
 		EntityList[0].Dimentions = {24, 32};
 		EntityList[0].Color = {1.0, 0.5, 0.0};
 		

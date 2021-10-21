@@ -4,3 +4,8 @@ bin/**
 src/Generated/**
 *.sln
 .vs/Blind/v16/.suo
+.vs/Blind/v16/Browse.VC.db
+.vs/Blind/v16/Browse.VC.db-shm
+.vs/Blind/v16/Browse.VC.db-wal
+.vs/Blind/v16/Browse.VC.opendb
+.vs/Blind/v16/ipch/AutoPCH/207ebf529fef4847/WIN32_BLIND.ipch
