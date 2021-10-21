@@ -25,6 +25,8 @@ struct entity {
 	// Location
 	hmm_v3 Position;
 	b8 Grounded;
+	// Seperate from Grounded, so that jump on downward slopes are more likely to happen.
+	b8 CanJump;
 
 	// Size
 	hmm_v2 Dimentions;
@@ -248,10 +250,6 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			else {
 				Entity->Velocity.X = 0;
 			}
-		
-			if (InputState.Current.Up && !InputState.Prevous.Up && Entity->Grounded) {
-				Entity->Velocity.Y = 300;
-			}
 		}
 	
 		if (Entity->Flags & EFLAG_DoGravity) {
@@ -273,7 +271,9 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 
 		if (Entity->Flags & EFLAG_CollideWithMap) {
 			// Now lets correct movement that has placed objects out of bounds.
+			Entity->CanJump = false;
 			Entity->Grounded = false; // assume that we are in the air. set otherwise if our legs collide with anything.
+			
 		
 			// Torso: push us out of walls
 			{ // Left Torso
@@ -337,14 +337,13 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 					                  (int)(Entity->Dimentions.Y/2 + 1),
 					                  {0, -1},
 					                  GameState.TileMap);
-			
-				// @TODO(Michael) I might want a dedicated ground sensor, rather than piggybacking off of our foot sensors. We definitly do, if we have a ground sensor that is more forgiving than out feet (lets say, by about 2-3 units, then that will likely fix the jank around jumping along downward slopes.
+				
 				if (deltaYr == 0 && deltaYl == 0) {
-					Entity->Grounded = 0;
+					Entity->Grounded = false;
 				}
 				else {
-					Entity->Grounded = 1;
 					Entity->Velocity.Y = 0;
+					Entity->Grounded = true;
 					
 					if (deltaYr > deltaYl)
 						Entity->Position.Y += deltaYr - 1;
@@ -388,6 +387,29 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 						Entity->Position.X -= disp;
 						Entity->Velocity.X = 0;
 					}
+				}
+			}
+
+			// Can Jump
+			if (Entity->Velocity.Y <= 0) {
+				int DeltaYr =
+					MapColisionCheck (
+					                  {(int)(Entity->Position.X + Entity->Dimentions.X/2 - 2),
+					                   (int)(Entity->Position.Y)},
+					                  (int)(Entity->Dimentions.Y/2 + 12),
+					                  {0, -1},
+					                  GameState.TileMap);
+				
+				int DeltaYl =
+					MapColisionCheck (
+					                  {(int)(Entity->Position.X - Entity->Dimentions.X/2 + 2),
+					                   (int)(Entity->Position.Y)},
+					                  (int)(Entity->Dimentions.Y/2 + 12),
+					                  {0, -1},
+					                  GameState.TileMap);
+
+				if (DeltaYl != 0 || DeltaYr != 0) {
+					Entity->CanJump = true;
 				}
 			}
 		
@@ -452,6 +474,12 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 						Entity->Velocity.X = 0;
 					}
 				}
+			}
+		}
+
+		if (Entity->Flags & EFLAG_Controlled) {
+			if (InputState.Current.Up && !InputState.Prevous.Up && (Entity->CanJump || Entity->Grounded)) {
+				Entity->Velocity.Y = 300;
 			}
 		}
 
