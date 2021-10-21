@@ -282,7 +282,7 @@ void Render_ClearScreen(hmm_v4 Color) {
 }
 
 void Render_Draw() {
-	Render_ClearScreen(hmm_v4{0.7, 0.7, 0.7, 1.0});
+	Render_ClearScreen(hmm_v4{0.0, 0.0, 0.0, 1.0});
 	local_persist ID3D11BlendState *QuadBlendState = 0;
 	local_persist ID3D11SamplerState *SamplerState = 0;
 	

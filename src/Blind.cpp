@@ -232,16 +232,23 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		GameState.Init = true;
 		GameState.CanDraw = false;
 		GameState.LevelWon = false;
+
+		for (s32 XIndex = 0; XIndex < WindowWidth; XIndex++) {
+			for (s32 YIndex = 0; YIndex < WindowHeight; YIndex++) {
+				u8 *Pixel = &UserDrawTextureData[((XIndex) + (YIndex) * (WindowWidth)) * 4];
+				*(u32*)Pixel = 0x00000000;
+			}
+		}
 		
 		memset(EntityList, 0, sizeof(EntityList));
 		
-		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_RenderRect | EFLAG_CollideWithMap;
+		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_CollideWithMap;
 		EntityList[0].Position.XY = playerSpawn[GameState.CurrentLevel];
 		EntityList[0].Position.Z = 5;
 		EntityList[0].Dimentions = {24, 32};
 		EntityList[0].Color = {1.0, 0.5, 0.0};
 
-		EntityList[1].Flags |= EFLAG_RenderRect; // | EFLAG_WinLevel;
+		EntityList[1].Flags |= EFLAG_RenderRect | EFLAG_WinLevel;
 		EntityList[1].Position.XY = winArea[GameState.CurrentLevel];
 		EntityList[1].Position.Z = 6;
 		EntityList[1].Dimentions = {32 * 4, 32 * 2};
@@ -305,13 +312,34 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 					if (XIndex >= 0 && XIndex < WindowWidth &&
 					    YIndex >= 0 && YIndex < WindowHeight) {
 						u8 *Pixel = &UserDrawTextureData[((XIndex) + (YIndex) * (WindowWidth)) * 4];
-						*(u32*)Pixel = 0xFFFF0000;
+						*(u32*)Pixel = 0xFF186818;
 					}
 					
 				}
 			}
 			
 		}
+
+		if (InputState.Mouse.RightClick) {
+			
+			for (s32 XIndex = InputState.Mouse.Position.X - 10;
+			     XIndex < InputState.Mouse.Position.X + 5;
+			     XIndex++) {
+				for (s32 YIndex = InputState.Mouse.Position.Y - 10;
+				     YIndex < InputState.Mouse.Position.Y + 5;
+				     YIndex++) {
+					
+					if (XIndex >= 0 && XIndex < WindowWidth &&
+					    YIndex >= 0 && YIndex < WindowHeight) {
+						u8 *Pixel = &UserDrawTextureData[((XIndex) + (YIndex) * (WindowWidth)) * 4];
+						*(u32*)Pixel = 0x00000000;
+					}
+					
+				}
+			}
+			
+		}
+		
 		Render_UpdateTextureArray(4, UserDrawTextureData, WindowWidth * 4);
 	}
 	

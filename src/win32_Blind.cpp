@@ -44,9 +44,6 @@ LRESULT MyWindowProc(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 		IsRunning = false;
 	} break;
 
-
-		
-
 	default: {
 		Result = DefWindowProc(Window, Message, WParam, LParam);
 	} break;
@@ -117,8 +114,10 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 				Assert(false);
 			}
 
+#if 0 
 			if (InputState.Mouse.LeftClick)
 				__debugbreak();
+#endif
 			InputState.Mouse.Position = {MousePos.x, MousePos.y};
 		}
 
