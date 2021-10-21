@@ -21,6 +21,7 @@ struct win32_keyboard_state {
 };
 
 f32 RandomFloat(f32 Min, f32 Max) {
+	// @TODO We could just swap Min and Max when Min is greater than Max
 	Assert(Min < Max);
 	local_persist b8 Init = false;
 	if (!Init) {

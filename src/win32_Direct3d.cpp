@@ -46,7 +46,7 @@ global_var ID3D11ShaderResourceView *TexturesSRV[5] = {};
 global_var quad_sample_instance_data QuadSampleInstanceData[100] = {};
 global_var u32 QuadSampleInstanceDataCount = 0;
 
-global_var quad_fill_instance_data QuadFillInstanceData[100] = {};
+global_var quad_fill_instance_data QuadFillInstanceData[5000] = {};
 global_var u32 QuadFillInstanceDataCount = 0;
 
 #define D3D_CompileBakedVertexShader(Name, Dest) {	  \
@@ -266,11 +266,13 @@ void Render_Init(HWND Window) {
 // At a high level, we want to enqueue data and then draw it all in a batch.
 
 void Render_EnqueueQuadSample(quad_sample_instance_data InstanceData) {
+	Assert(QuadSampleInstanceDataCount < ArraySize(QuadSampleInstanceData));
 	QuadSampleInstanceData[QuadSampleInstanceDataCount] = InstanceData;
 	QuadSampleInstanceDataCount++;
 }
 
 void Render_EnqueueQuadFill(quad_fill_instance_data Data) {
+	Assert(QuadFillInstanceDataCount < ArraySize(QuadFillInstanceData));
 	QuadFillInstanceData[QuadFillInstanceDataCount] = Data;
 	QuadFillInstanceDataCount++;
 }
@@ -341,7 +343,7 @@ void Render_Draw() {
 			const f32 Height = (f32)WindowHeight;
 			D3D11_MAPPED_SUBRESOURCE Mapped = {};
 			hmm_mat4 WorldToScreen =
-				HMM_Scale(hmm_v3{1/(Width/2), 1/(Height/2), 1}) *
+				HMM_Scale(hmm_v3{1/(Width/2), 1/(Height/2), 1/10}) *
 				HMM_Translate(hmm_v3{-Width/2, -Height/2, 0})
 				;
 

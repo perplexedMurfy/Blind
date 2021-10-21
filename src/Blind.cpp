@@ -5,15 +5,19 @@
 #include "Blind_Render.cpp"
 #include "Blind_Map.cpp"
 
+#include <vector>
+
+f32 RandomFloat(f32, f32);
+
+struct iv2 {
+	s32 X, Y;
+};
+
 const u32 EFLAG_Controlled = 0x1;
 const u32 EFLAG_RenderRect = 0x2;
 const u32 EFLAG_SimMovement = 0x4;
 const u32 EFLAG_CollideWithMap = 0x8;
 const u32 EFLAG_DoGravity = 0x10;
-
-struct iv2 {
-	s32 X, Y;
-};
 
 struct entity {
 	s64 Flags;
@@ -32,6 +36,25 @@ struct entity {
 	// Visual
 	// @TODO(Michael) replace/add information about what texture this should use. Likely will be 4 texture coords and 1 index into our texture array?
 	hmm_v3 Color;
+};
+
+const u32 PFLAG_DoLifeTime = 0x1;
+const u32 PFLAG_CollideWithMap = 0x2;
+const u32 PFLAG_RenderRect = 0x4;
+const u32 PFLAG_SimMovement = 0x8;
+
+struct partical {
+	s64 Flags;
+	hmm_v3 Position;
+	
+	hmm_v2 Velocity;
+
+	hmm_v2 Dimentions;
+
+	hmm_v3 Color;
+
+	float LifeTime;
+	float CurTime;
 };
 
 struct controller_state {
@@ -72,6 +95,9 @@ struct input_state {
 
 global_var entity EntityList[100] = {};
 
+const u32 ParticalMax = 5000;
+global_var std::vector<partical> ParticalList;
+
 struct game_state {
 	u32 *TileMap[MapHeight][MapWidth];
 	b8 CanDraw;
@@ -99,10 +125,6 @@ s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, u32* TileMap[][MapWi
 		    Tile.X < MapWidth &&
 		    Tile.Y < MapHeight) {
 			u32 Height = TileMap[Tile.Y][Tile.X][SubTile.X];
-			//There is a conflict of co-ord systems here...
-			//height is counted from the bottom of the tile,
-			//while subTile.Y is counted from the top.
-			s32 FarDown = 32 - SubTile.Y;
 			if (SubTile.Y < Height) {
 				return Length - Index;
 			}
@@ -111,21 +133,59 @@ s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, u32* TileMap[][MapWi
 	return 0;
 }
 
+b8 SinglePointCollisionCheck(iv2 Position, u32* TileMap[][MapWidth]) {
+	iv2 Tile = {Position.X / 32, 29 - Position.Y / 32};
+	iv2 SubTile = {Position.X % 32, Position.Y % 32};
+	if (Tile.X >= 0 &&
+	    Tile.Y >= 0 &&
+	    Tile.X < MapWidth &&
+	    Tile.Y < MapHeight) {
+		u32 Height = TileMap[Tile.Y][Tile.X][SubTile.X];
+		if (SubTile.Y < Height) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void SpawnParticalAroundColision(iv2 StartPoint, iv2 Direction, s32 Length) {
+	s32 Offset = (Length - 1) - MapColisionCheck(StartPoint, Length, Direction, GameState.TileMap);
+	
+	if (Offset != (Length - 1)) {
+		hmm_v2 fOffset = {(f32)(Offset * Direction.X), (f32)(Offset * Direction.Y)};
+		hmm_v2 fStartPoint = {(f32)StartPoint.X, (f32)StartPoint.Y};
+		
+		partical Partical = {};
+		Partical.Flags = PFLAG_DoLifeTime | PFLAG_RenderRect | PFLAG_SimMovement;
+		Partical.Position.XY = fStartPoint + fOffset;
+		Partical.Position.Z = 4;
+		Partical.Velocity = hmm_v2{RandomFloat(-5, 5), RandomFloat(-5, 5)};
+		Partical.Dimentions = hmm_v2{1, 1};
+		Partical.Color = hmm_v3{0, RandomFloat(0.8, 1.0), RandomFloat(0.0, 0.6)};
+		Partical.LifeTime = 0.5;
+		Partical.CurTime = 0;
+		
+		ParticalList.push_back(Partical);
+	}
+}
+
 void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 
 	local_persist b8 Init = false;
 	if (!Init) {
 		Init = true;
 		
-		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_RenderRect | EFLAG_DoGravity | EFLAG_SimMovement  | EFLAG_CollideWithMap;
-		EntityList[0].Position = {32, 128};
-		EntityList[0].Dimentions = {32, 32};
-		EntityList[0].Color = {1.0, 0.5, 0};
+		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_RenderRect | EFLAG_CollideWithMap;
+		EntityList[0].Position = {32, 128, 5};
+		EntityList[0].Dimentions = {24, 32};
+		EntityList[0].Color = {1.0, 0.5, 0.0};
 		
 		memcpy(GameState.TileMap, TEST_TILE_MAP, sizeof(TEST_TILE_MAP));
 		InitMap(GameState.TileMap);
 
 		GameState.CanDraw = true;
+
+		ParticalList.reserve(ParticalMax);
 	}
 
 	// Debug TileMap
@@ -151,9 +211,10 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			hmm_v2{1.0, 1.0},
 	  });
 
-	// @TODO(Michael) This is totally jank, in reality we need to fill in a line between each sample.
+	// @TODO(Michael) @Jank This is totally jank, in reality we need to fill in a line between each sample. We could probably achieve this by rendering lines to the UserDraw texture and then drawing that texture to the screen.
 	if (GameState.CanDraw) {
 		if (InputState.Mouse.LeftClick) {
+			
 			for (s32 XIndex = InputState.Mouse.Position.X - 5;
 			     XIndex < InputState.Mouse.Position.X + 5;
 			     XIndex++) {
@@ -226,6 +287,14 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 				if (disp) {
 					Entity->Position.X += disp;
 					Entity->Velocity.X = 0;
+
+					for (s32 Count = 0; Count < 6; Count++) {
+						iv2 CheckPos = {
+							(s32)(Entity->Position.X - Entity->Dimentions.X/2),
+							(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
+						};
+						SpawnParticalAroundColision(CheckPos, {-1, 0}, 4);
+					}
 				}
 			}
 		
@@ -240,7 +309,14 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 				if (disp) {
 					Entity->Position.X -= disp;
 					Entity->Velocity.X = 0;
-				
+
+					for (s32 Count = 0; Count < 6; Count++) {
+						iv2 CheckPos = {
+							(s32)(Entity->Position.X + Entity->Dimentions.X/2),
+							(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
+						};
+						SpawnParticalAroundColision(CheckPos, {1, 0}, 4);
+					}
 				}
 			}
 		
@@ -262,7 +338,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 					                  {0, -1},
 					                  GameState.TileMap);
 			
-				// @TODO(Michael) I might want a dedicated ground sensor, rather than piggybacking off of our foot sensors.
+				// @TODO(Michael) I might want a dedicated ground sensor, rather than piggybacking off of our foot sensors. We definitly do, if we have a ground sensor that is more forgiving than out feet (lets say, by about 2-3 units, then that will likely fix the jank around jumping along downward slopes.
 				if (deltaYr == 0 && deltaYl == 0) {
 					Entity->Grounded = 0;
 				}
@@ -274,6 +350,15 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 						Entity->Position.Y += deltaYr - 1;
 					else
 						Entity->Position.Y += deltaYl - 1;
+
+					for (s32 Count = 0; Count < 6; Count++) {
+						iv2 CheckPos = {
+							(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
+							(s32)(Entity->Position.Y - Entity->Dimentions.Y/2)
+						};
+						SpawnParticalAroundColision(CheckPos, {0, -1}, 8);
+					}
+					
 				}
 			}
 			else { //if we're rising, we should instead push us out of walls
@@ -330,6 +415,13 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 						Entity->Position.Y -= deltaYr;
 					else
 						Entity->Position.Y -= deltaYl;
+
+					for (s32 Count = 0; Count < 40; Count++) {
+						iv2 CheckPos = {
+							(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
+							(s32)(Entity->Position.Y + Entity->Dimentions.Y/2)};
+						SpawnParticalAroundColision(CheckPos, {0, 1}, 3);
+					}
 				}
 			}
 			else { //if we're falling, lets push us out of walls.
@@ -373,6 +465,30 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			};
 			Render_EnqueueQuadFill(Data);
 		}
+	}
+
+	for (auto Iter = ParticalList.begin(); Iter != ParticalList.end(); Iter++) {
+		if (Iter->Flags & PFLAG_SimMovement) {
+			Iter->Position.XY += Iter->Velocity * DeltaTime;
+		}
+
+		if (Iter->Flags & PFLAG_RenderRect) {
+			quad_fill_instance_data Data {
+				Iter->Position,
+				Iter->Dimentions,
+				Iter->Color
+			};
+			Render_EnqueueQuadFill(Data);
+		}
+
+		if (Iter->Flags & PFLAG_DoLifeTime) {
+			Iter->CurTime += DeltaTime;
+			if (Iter->CurTime > Iter->LifeTime) {
+				Iter = ParticalList.erase(Iter);
+			}
+		}
+
+		if (Iter == ParticalList.end()) { break; }
 	}
 	
 	Render_Draw();
