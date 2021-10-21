@@ -3,6 +3,9 @@
 rem so that we always execute in the same directory every time.
 cd %~dp0
 
+if not exist bin mkdir bin
+if not exist bin\obj mkdir bin\obj
+
 set NAME=Blind
 set code=win32_Blind.cpp
 set objs=win32_Blind.obj

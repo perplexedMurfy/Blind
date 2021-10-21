@@ -1,6 +1,8 @@
 @echo off
 
-cd %~dp0\bin
+pushd %~dp0\bin
 
 Blind.exe
+
+popd
 
