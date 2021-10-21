@@ -39,8 +39,9 @@ global_var ID3D11RenderTargetView *RenderTargetView = 0;
 // [1] = Background
 // [2] = Foreground
 // [3] = TextureAtlas
-global_var ID3D11Texture2D *Textures[4] = {};
-global_var ID3D11ShaderResourceView *TexturesSRV[4] = {};
+// [4] = UserDrawing
+global_var ID3D11Texture2D *Textures[5] = {};
+global_var ID3D11ShaderResourceView *TexturesSRV[5] = {};
 
 global_var quad_sample_instance_data QuadSampleInstanceData[100] = {};
 global_var u32 QuadSampleInstanceDataCount = 0;
@@ -202,23 +203,33 @@ void Render_Init(HWND Window) {
 
 		Result = D3D_Device->CreateShaderResourceView(Textures[0], 0, &TexturesSRV[0]);
 		Assert(SUCCEEDED(Result));
+		
 
 		Result = D3D_Device->CreateTexture2D(&TextureDescription, 0, &Textures[1]);
 		Assert(SUCCEEDED(Result));
 
 		Result = D3D_Device->CreateShaderResourceView(Textures[1], 0, &TexturesSRV[1]);
 		Assert(SUCCEEDED(Result));
+		
 
 		Result = D3D_Device->CreateTexture2D(&TextureDescription, 0, &Textures[2]);
 		Assert(SUCCEEDED(Result));
 
 		Result = D3D_Device->CreateShaderResourceView(Textures[2], 0, &TexturesSRV[2]);
 		Assert(SUCCEEDED(Result));
+		
 
 		Result = D3D_Device->CreateTexture2D(&TextureDescription, 0, &Textures[3]);
 		Assert(SUCCEEDED(Result));
 
 		Result = D3D_Device->CreateShaderResourceView(Textures[3], 0, &TexturesSRV[3]);
+		Assert(SUCCEEDED(Result));
+		
+
+		Result = D3D_Device->CreateTexture2D(&TextureDescription, 0, &Textures[4]);
+		Assert(SUCCEEDED(Result));
+
+		Result = D3D_Device->CreateShaderResourceView(Textures[4], 0, &TexturesSRV[4]);
 		Assert(SUCCEEDED(Result));
 	}
 
@@ -270,7 +281,8 @@ void Render_ClearScreen(hmm_v4 Color) {
 
 void Render_Draw() {
 	Render_ClearScreen(hmm_v4{0.7, 0.7, 0.7, 1.0});
-	ID3D11BlendState *QuadBlendState = 0;
+	local_persist ID3D11BlendState *QuadBlendState = 0;
+	local_persist ID3D11SamplerState *SamplerState = 0;
 	
 	// One time Initlization stuff
 	local_persist b8 IsInitilized = false;
@@ -290,7 +302,6 @@ void Render_Draw() {
 			Assert(SUCCEEDED(Result));
 		}
 		
-		ID3D11SamplerState *SamplerState = 0;
 		{
 			D3D11_SAMPLER_DESC SamplerDesc = {};
 			SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -302,10 +313,10 @@ void Render_Draw() {
 			SamplerDesc.MinLOD = 5;
 			SamplerDesc.MaxLOD = 0;
 			
-			D3D_Device->CreateSamplerState(&SamplerDesc, &SamplerState);
+			HRESULT HResult = D3D_Device->CreateSamplerState(&SamplerDesc, &SamplerState);
+			Assert(SUCCEEDED(HResult));
 		}
 
-		ID3D11BlendState *QuadBlendState = 0;
 		{
 			// NOTE(Michael) I don't toally understand it, but this should allow for alphablending.
 			D3D11_BLEND_DESC BlendDesc = {};
@@ -346,9 +357,6 @@ void Render_Draw() {
 		
 		D3D_DeviceCtx->VSSetShader(QuadFill.VertexShader, 0, 0);
 		D3D_DeviceCtx->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-
-		D3D_DeviceCtx->PSSetShader(QuadSample.PixelShader, 0, 0);
-		D3D_DeviceCtx->PSSetSamplers(0, 1, &SamplerState);
 	}
 
 	// General State Setting
@@ -359,11 +367,13 @@ void Render_Draw() {
 	
 	// Quad Sample
 	{
-		D3D_DeviceCtx->OMSetBlendState(QuadBlendState, 0, 0xffffffff);
-		D3D_DeviceCtx->IASetInputLayout(QuadSample.Layout);
 		D3D_DeviceCtx->VSSetShader(QuadSample.VertexShader, 0, 0);
 		D3D_DeviceCtx->PSSetShader(QuadSample.PixelShader, 0, 0);
-		D3D_DeviceCtx->PSSetShaderResources(0, 4, TexturesSRV);
+		
+		D3D_DeviceCtx->OMSetBlendState(QuadBlendState, 0, 0xffffffff);
+		D3D_DeviceCtx->IASetInputLayout(QuadSample.Layout);
+		D3D_DeviceCtx->PSSetShaderResources(0, 5, TexturesSRV);
+		D3D_DeviceCtx->PSSetSamplers(0, 1, &SamplerState);
 
 		u32 Stride = sizeof(quad_sample_instance_data);
 		u32 Offset = 0;

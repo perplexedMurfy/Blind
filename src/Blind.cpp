@@ -11,6 +11,10 @@ const u32 EFLAG_SimMovement = 0x4;
 const u32 EFLAG_CollideWithMap = 0x8;
 const u32 EFLAG_DoGravity = 0x10;
 
+struct iv2 {
+	s32 X, Y;
+};
+
 struct entity {
 	s64 Flags;
 
@@ -54,19 +58,23 @@ struct controller_state {
 	b8 Select;
 };
 
+struct mouse_state {
+	iv2 Position;
+	b8 LeftClick;
+	b8 RightClick;
+};
+
 struct input_state {
 	controller_state Current;
 	controller_state Prevous;
-};
-
-struct iv2 {
-	s32 X, Y;
+	mouse_state Mouse;
 };
 
 global_var entity EntityList[100] = {};
 
 struct game_state {
 	u32 *TileMap[MapHeight][MapWidth];
+	b8 CanDraw;
 } GameState;
 
 /**
@@ -113,10 +121,14 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		EntityList[0].Position = {32, 128};
 		EntityList[0].Dimentions = {32, 32};
 		EntityList[0].Color = {1.0, 0.5, 0};
+		
 		memcpy(GameState.TileMap, TEST_TILE_MAP, sizeof(TEST_TILE_MAP));
 		InitMap(GameState.TileMap);
+
+		GameState.CanDraw = true;
 	}
 
+	// Debug TileMap
 	Render_EnqueueQuadSample(
 	  {
 			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
@@ -127,6 +139,40 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			hmm_v2{0.0, 1.0},
 			hmm_v2{1.0, 1.0},
 	  });
+
+	Render_EnqueueQuadSample(
+	  {
+			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
+			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+			4,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
+	  });
+
+	// @TODO(Michael) This is totally jank, in reality we need to fill in a line between each sample.
+	if (GameState.CanDraw) {
+		if (InputState.Mouse.LeftClick) {
+			for (s32 XIndex = InputState.Mouse.Position.X - 5;
+			     XIndex < InputState.Mouse.Position.X + 5;
+			     XIndex++) {
+				for (s32 YIndex = InputState.Mouse.Position.Y - 5;
+				     YIndex < InputState.Mouse.Position.Y + 5;
+				     YIndex++) {
+					
+					if (XIndex >= 0 && XIndex < WindowWidth &&
+					    YIndex >= 0 && YIndex < WindowHeight) {
+						u8 *Pixel = &UserDrawTextureData[((XIndex) + (YIndex) * (WindowWidth)) * 4];
+						*(u32*)Pixel = 0xFFFF0000;
+					}
+					
+				}
+			}
+			
+		}
+		Render_UpdateTextureArray(4, UserDrawTextureData, WindowWidth * 4);
+	}
 	
 	for (s32 Index = 0; Index < ArraySize(EntityList); Index++) {
 		entity * const Entity = &EntityList[Index];

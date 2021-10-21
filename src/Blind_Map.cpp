@@ -47,6 +47,9 @@ const u32 *TEST_TILE_MAP[MapHeight][MapWidth] = {
 
 
 global_var u8 ColisionRawTextureData[WindowWidth * WindowHeight * 4] = {};
+global_var u8 UserDrawTextureData[WindowWidth * WindowHeight * 4] = {};
+global_var u8 LevelBackground[WindowWidth * WindowHeight * 4] = {};
+global_var u8 LevelForeground[WindowWidth * WindowHeight * 4] = {};
 
 void InitMap(u32 *MapData[][40]) {
 
@@ -56,7 +59,7 @@ void InitMap(u32 *MapData[][40]) {
 			s32 Height = (s32)MapData[YIndex/32][XIndex/32][XIndex%32];
 			
 			if ((YIndex%32) >= 32 - Height) {
-				*(u32*)Pixel = 0xFFAAAA00;
+				*(u32*)Pixel = 0xFF00FFFF;
 			}
 			else {
 				*(u32*)Pixel = 0x00000000;

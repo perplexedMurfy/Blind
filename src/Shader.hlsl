@@ -18,6 +18,7 @@ Texture2D TextureDebugCol : register(t0);
 Texture2D TextureBackground : register(t1);
 Texture2D TextureForeground : register(t2);
 Texture2D TextureAtlas : register(t3);
+Texture2D TextureUserDraw : register(t4);
 
 SamplerState SamplerConfig : register(s0);
 
@@ -78,6 +79,9 @@ float4 QuadSamplePixel(QuadSampleP Input) : SV_TARGET {
 	}
 	if (Index == 3) {
 		return TextureAtlas.Sample(SamplerConfig, Input.TextureCoord);
+	}
+	if (Index == 4) {
+		return TextureUserDraw.Sample(SamplerConfig, Input.TextureCoord);
 	}
 
 	return float4(1, 0, 1, 1);

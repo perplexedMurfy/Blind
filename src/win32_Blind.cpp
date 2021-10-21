@@ -43,6 +43,9 @@ LRESULT MyWindowProc(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 		IsRunning = false;
 	} break;
 
+
+		
+
 	default: {
 		Result = DefWindowProc(Window, Message, WParam, LParam);
 	} break;
@@ -69,7 +72,7 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 		RegisterClass(&WindowClass);
 	}
 
-	HWND Window = CreateWindowEx(0, L"MyClass", L"Blind", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WindowWidth, WindowHeight, 0, 0, Instance, 0);
+	HWND Window = CreateWindowEx(0, L"MyClass", L"Blind", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WindowWidth + 16, WindowHeight + 39, 0, 0, Instance, 0);
 	
 	ShowWindow(Window, ShowCommand);
 	
@@ -84,7 +87,7 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 			DispatchMessage(&Message);
 		}
 
-		// keyboard input
+		// keyboard and mouse input
 		if (!GetKeyboardState(Keyboard.keys)) {
 			Assert(false);
 		}
@@ -97,6 +100,22 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 		InputState.Current.B = Keyboard.keys['X'] & 0x80;
 		InputState.Current.X = Keyboard.keys['A'] & 0x80;
 		InputState.Current.Y = Keyboard.keys['S'] & 0x80;
+
+		InputState.Mouse.LeftClick = Keyboard.keys[VK_LBUTTON] & 0x80;
+		InputState.Mouse.RightClick = Keyboard.keys[VK_RBUTTON] & 0x80;
+
+		{
+			POINT MousePos;
+			if (!GetCursorPos(&MousePos)) {
+				Assert(false);
+			}
+
+			if (!ScreenToClient(Window, &MousePos)) {
+				Assert(false);
+			}
+
+			InputState.Mouse.Position = {MousePos.x, MousePos.y};
+		}
 
 		// @TODO(Michael) Actually calculate DeltaTime.
 		// Direct3d11 gives us v-sync by default, so we should be around 60 frames per second, so assuming deltatime is 0.016 isn't the worst thing in the world.
