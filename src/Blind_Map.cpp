@@ -324,7 +324,7 @@ global_var const s32* LEVEL_05_MAP[MapHeight][MapWidth] = {
 * Dimensions: 128px wide, 32px tall (4 x 1 units)
 *
 * Platform 1 [VERTICAL]: Start - (128,112) End - (128,464)
-* Platform 2 [HORIZONTAL]: Start - (256,464) End - (256,464)
+* Platform 2 [HORIZONTAL]: Start - (256,464) End - (1024,464)
 * Platform 3 [VERTICAL]: Start - (1152,112) End - (1152,432)
 * Platform 4 [VERTICAL]: Start - (1152,528) End - (1152,752)
 * Platform 5 [HORIZONTAL]: Start - (1024,784) End - (320,784)
@@ -365,15 +365,15 @@ global_var entity LV6_PLAT_1_ENTITY = {
 };
 
 global_var scripted_path_node LV6_PLAT_2_PATH[] = {
-	{{128, 464}, 7},
-	{{128, 112}, 7},
+	{{1024, 464}, 7},
+	{{256, 464}, 7},
 };
 global_var entity LV6_PLAT_2_ENTITY = {
 	//Flags
 	EFLAG_ScriptedPath | EFLAG_RenderRectWhenWon | EFLAG_RenderRect | EFLAG_Solid | EFLAG_SimMovement,
 
 	// Position
-	hmm_v3{128, 112, 5},
+	hmm_v3{256, 464, 5},
 	// Grounded
 	false,
 	// CanJump
@@ -390,6 +390,108 @@ global_var entity LV6_PLAT_2_ENTITY = {
 	&LV6_PLAT_2_PATH[0],
 	// ScriptedPathLength
 	ArraySize(LV6_PLAT_2_PATH),
+	// CurrentNode
+	0,
+	// ElapsedTime
+	0,
+	// RepeatPath
+	true,
+};
+
+global_var scripted_path_node LV6_PLAT_3_PATH[] = {
+	{{1152, 432}, 7},
+	{{1152, 112}, 7},
+};
+global_var entity LV6_PLAT_3_ENTITY = {
+	//Flags
+	EFLAG_ScriptedPath | EFLAG_RenderRectWhenWon | EFLAG_RenderRect | EFLAG_Solid | EFLAG_SimMovement,
+
+	// Position
+	hmm_v3{1152, 112, 5},
+	// Grounded
+	false,
+	// CanJump
+	false,
+
+	// Dimentions
+	hmm_v2{128, 32},
+	// Velocity
+	hmm_v2{0, 0},
+	// Acceleration
+	hmm_v2{0, 0},
+
+	// ScriptedPath
+	&LV6_PLAT_3_PATH[0],
+	// ScriptedPathLength
+	ArraySize(LV6_PLAT_3_PATH),
+	// CurrentNode
+	0,
+	// ElapsedTime
+	0,
+	// RepeatPath
+	true,
+};
+
+global_var scripted_path_node LV6_PLAT_4_PATH[] = {
+	{{1152, 752}, 7},
+	{{1152, 528}, 7},
+};
+global_var entity LV6_PLAT_4_ENTITY = {
+	//Flags
+	EFLAG_ScriptedPath | EFLAG_RenderRectWhenWon | EFLAG_RenderRect | EFLAG_Solid | EFLAG_SimMovement,
+
+	// Position
+	hmm_v3{1152, 528, 5},
+	// Grounded
+	false,
+	// CanJump
+	false,
+
+	// Dimentions
+	hmm_v2{128, 32},
+	// Velocity
+	hmm_v2{0, 0},
+	// Acceleration
+	hmm_v2{0, 0},
+
+	// ScriptedPath
+	&LV6_PLAT_4_PATH[0],
+	// ScriptedPathLength
+	ArraySize(LV6_PLAT_4_PATH),
+	// CurrentNode
+	0,
+	// ElapsedTime
+	0,
+	// RepeatPath
+	true,
+};
+
+global_var scripted_path_node LV6_PLAT_5_PATH[] = {
+	{{320, 784}, 7},
+	{{1024, 784}, 7},
+};
+global_var entity LV6_PLAT_5_ENTITY = {
+	//Flags
+	EFLAG_ScriptedPath | EFLAG_RenderRectWhenWon | EFLAG_RenderRect | EFLAG_Solid | EFLAG_SimMovement,
+
+	// Position
+	hmm_v3{1024, 784, 5},
+	// Grounded
+	false,
+	// CanJump
+	false,
+
+	// Dimentions
+	hmm_v2{128, 32},
+	// Velocity
+	hmm_v2{0, 0},
+	// Acceleration
+	hmm_v2{0, 0},
+
+	// ScriptedPath
+	&LV6_PLAT_5_PATH[0],
+	// ScriptedPathLength
+	ArraySize(LV6_PLAT_5_PATH),
 	// CurrentNode
 	0,
 	// ElapsedTime
@@ -623,6 +725,13 @@ void InitMap(s32 *MapData[][40], s32 CurrentLevel) {
 			break;
 		case 4:
 			AppendEntity(LV5_PLAT_1_ENTITY);
+			break;
+		case 5:
+			AppendEntity(LV6_PLAT_1_ENTITY);
+			AppendEntity(LV6_PLAT_2_ENTITY);
+			AppendEntity(LV6_PLAT_3_ENTITY);
+			AppendEntity(LV6_PLAT_4_ENTITY);
+			AppendEntity(LV6_PLAT_5_ENTITY);
 			break;
 		}
 	}

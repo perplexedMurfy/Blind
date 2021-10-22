@@ -70,7 +70,7 @@ int WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int S
 		RegisterClass(&WindowClass);
 	}
 
-	HWND Window = CreateWindowEx(0, L"MyClass", L"Blind", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WindowWidth + 16, WindowHeight + 39, 0, 0, Instance, 0);
+	HWND Window = CreateWindowEx(0, L"MyClass", L"Suppose", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WindowWidth + 16, WindowHeight + 39, 0, 0, Instance, 0);
 	
 	ShowWindow(Window, ShowCommand);
 	
