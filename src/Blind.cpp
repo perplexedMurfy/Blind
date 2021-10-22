@@ -198,10 +198,10 @@ void SpawnPartical(hmm_v2 SpawnPoint) {
 	Partical.Flags = PFLAG_DoLifeTime | PFLAG_RenderRect | PFLAG_SimMovement;
 	Partical.Position.XY = SpawnPoint;
 	Partical.Position.Z = 4;
-	Partical.Velocity = hmm_v2{RandomFloat(-5, 5), RandomFloat(-5, 5)};
-	Partical.Dimentions = hmm_v2{1, 1};
-	Partical.Color = hmm_v3{0, RandomFloat(0.8, 1.0), RandomFloat(0.0, 0.6)};
-	Partical.LifeTime = 0.5;
+	Partical.Velocity = hmm_v2{RandomFloat(-10, 10), RandomFloat(-10, 10)};
+	Partical.Dimentions = hmm_v2{2, 2};
+	Partical.Color = hmm_v3{0, RandomFloat(0.6, 1.0), RandomFloat(0.0, 0.6)};
+	Partical.LifeTime = 0.10;
 	Partical.CurTime = 0;
 	
 	ParticalList.push_back(Partical);
@@ -239,6 +239,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 				*(u32*)Pixel = 0x00000000;
 			}
 		}
+		Render_UpdateTextureArray(4, UserDrawTextureData, WindowWidth * 4);
 		
 		memset(EntityList, 0, sizeof(EntityList));
 		
