@@ -322,10 +322,10 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 
 		if (InputState.Mouse.RightClick) {
 			
-			for (s32 XIndex = InputState.Mouse.Position.X - 10;
+			for (s32 XIndex = InputState.Mouse.Position.X - 20;
 			     XIndex < InputState.Mouse.Position.X + 5;
 			     XIndex++) {
-				for (s32 YIndex = InputState.Mouse.Position.Y - 10;
+				for (s32 YIndex = InputState.Mouse.Position.Y - 20;
 				     YIndex < InputState.Mouse.Position.Y + 5;
 				     YIndex++) {
 					
