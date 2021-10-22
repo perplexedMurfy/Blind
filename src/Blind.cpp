@@ -124,8 +124,22 @@ struct game_state {
 s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, s32* TileMap[][MapWidth]) {
 	for (int Index = 1; Index <= Length; Index++) {
 		iv2 Position = {(Start.X + Index * Direction.X), (Start.Y + Index * Direction.Y)};
+		iv2 Tile;
 
-		iv2 Tile = {Position.X / 32, 29 - Position.Y / 32};
+		if (Position.X >= 0) {
+			Tile.X = Position.X / 32;
+		}
+		else {
+			Tile.X = 1 - Position.X / 32;
+		}
+		
+		if (Position.Y >= 0) {
+			Tile.Y = 29 - Position.Y / 32;
+		}
+		else {
+			Tile.Y = 30 - Position.Y / 32;
+		}
+		
 		iv2 SubTile = {Position.X % 32, Position.Y % 32};
 		
 		if (Tile.X >= 0 &&
