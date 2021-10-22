@@ -912,6 +912,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 				if (WinEntity->Flags & EFLAG_WinLevel) {
 					if (IsInsideEntity(TestPos, *WinEntity)) {
 						GameState.LevelWon = true;
+						EntityList[0].Flags |= EFLAG_RenderRect; // @TODO(Michael) This assumes that [0] is always the player, it might not be!
 					}
 				}
 			}
