@@ -128,6 +128,7 @@ struct game_state {
 	b8 CanDraw;
 	b8 LevelWon;
 	b8 Init;
+	u32 PlayerEntity,
 	
 } GameState;
 
@@ -284,6 +285,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		Render_UpdateTextureArray(4, UserDrawTextureData, WindowWidth * 4);
 		
 		memset(EntityList, 0, sizeof(EntityList));
+		EntityListCount = 0; 
 
 		entity StagingEntity = {};
 		
@@ -293,6 +295,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		StagingEntity.Position.Z = 5;
 		StagingEntity.Dimentions = {24, 32};
 		StagingEntity.Color = {1.0, 0.5, 0.0};
+		GameState.PlayerEntity = EntityListCount;
 		AppendEntity(StagingEntity);
 
 		StagingEntity = {};
@@ -912,7 +915,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 				if (WinEntity->Flags & EFLAG_WinLevel) {
 					if (IsInsideEntity(TestPos, *WinEntity)) {
 						GameState.LevelWon = true;
-						EntityList[0].Flags |= EFLAG_RenderRect; // @TODO(Michael) This assumes that [0] is always the player, it might not be!
+						EntityList[GameState.PlayerEntity].Flags |= EFLAG_RenderRect; // @TODO(Michael) This assumes that [0] is always the player, it might not be!
 					}
 				}
 			}
