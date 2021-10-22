@@ -255,18 +255,33 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		EntityList[1].Dimentions = {32 * 4, 32 * 2};
 		EntityList[1].Color = {0.0, 1.0, 0.0};
 
-		if (GameState.CurrentLevel == 0) {
+		switch (GameState.CurrentLevel + 1) {
+		case 1:
 			memcpy(GameState.TileMap, LEVEL_01_MAP, sizeof(LEVEL_01_MAP));
-		}
-		else if (GameState.CurrentLevel == 1) {
+			break;
+		case 2:
 			memcpy(GameState.TileMap, LEVEL_02_MAP, sizeof(LEVEL_02_MAP));
-		}
-		else if (GameState.CurrentLevel == 2) {
+			break;
+		case 3:
 			memcpy(GameState.TileMap, LEVEL_03_MAP, sizeof(LEVEL_03_MAP));
-		}
-		else if (GameState.CurrentLevel == 3) {
+			break;
+		case 4:
 			memcpy(GameState.TileMap, LEVEL_04_MAP, sizeof(LEVEL_04_MAP));
+			break;
+		case 5:
+			memcpy(GameState.TileMap, LEVEL_05_MAP, sizeof(LEVEL_05_MAP));
+			break;
+		case 6:
+			memcpy(GameState.TileMap, LEVEL_06_MAP, sizeof(LEVEL_06_MAP));
+			break;
+		case 7:
+			memcpy(GameState.TileMap, LEVEL_07_MAP, sizeof(LEVEL_07_MAP));
+			break;
+		case 8:
+			memcpy(GameState.TileMap, LEVEL_08_MAP, sizeof(LEVEL_08_MAP));
+			break;
 		}
+
 		InitMap(GameState.TileMap, GameState.CurrentLevel);
 
 		GameState.CanDraw = true;
