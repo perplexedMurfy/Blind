@@ -128,7 +128,7 @@ struct game_state {
 	b8 CanDraw;
 	b8 LevelWon;
 	b8 Init;
-	u32 PlayerEntity,
+	u32 PlayerEntity;
 	
 } GameState;
 
