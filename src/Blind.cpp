@@ -193,7 +193,7 @@ b8 IsInsideEntity(iv2 Position, entity Entity) {
 	return false;
 }
 
-void SpawnPartical(hmm_v2 SpawnPoint) {
+void SpawnPartical(hmm_v2 SpawnPoint, f32 LifeTime) {
 	partical Partical = {};
 	Partical.Flags = PFLAG_DoLifeTime | PFLAG_RenderRect | PFLAG_SimMovement;
 	Partical.Position.XY = SpawnPoint;
@@ -201,29 +201,29 @@ void SpawnPartical(hmm_v2 SpawnPoint) {
 	Partical.Velocity = hmm_v2{RandomFloat(-10, 10), RandomFloat(-10, 10)};
 	Partical.Dimentions = hmm_v2{2, 2};
 	Partical.Color = hmm_v3{0, RandomFloat(0.6, 1.0), RandomFloat(0.0, 0.6)};
-	Partical.LifeTime = 0.10;
+	Partical.LifeTime = LifeTime;
 	Partical.CurTime = 0;
 	
 	ParticalList.push_back(Partical);
 }
 
-void SpawnParticalAroundTileMap(iv2 StartPoint, iv2 Direction, s32 Length) {
+void SpawnParticalAroundTileMap(iv2 StartPoint, iv2 Direction, s32 Length, f32 LifeTime) {
 	s32 Offset = (Length - 1) - MapColisionCheck(StartPoint, Length, Direction, GameState.TileMap);
 	
 	if (Offset != (Length - 1)) {
 		hmm_v2 fOffset = {(f32)(Offset * Direction.X), (f32)(Offset * Direction.Y)};
 		hmm_v2 fStartPoint = {(f32)StartPoint.X, (f32)StartPoint.Y};
-		SpawnPartical(fStartPoint + fOffset);
+		SpawnPartical(fStartPoint + fOffset, LifeTime);
 	}
 }
 
-void SpawnParticalAroundEntity(iv2 StartPoint, iv2 Direction, s32 Length, entity Entity) {
+void SpawnParticalAroundEntity(iv2 StartPoint, iv2 Direction, s32 Length, entity Entity, f32 LifeTime) {
 	s32 Offset = (Length - 1) - EntityCollisionCheck(StartPoint, Length, Direction, Entity);
 	
 	if (Offset != (Length - 1)) {
 		hmm_v2 fOffset = {(f32)(Offset * Direction.X), (f32)(Offset * Direction.Y)};
 		hmm_v2 fStartPoint = {(f32)StartPoint.X, (f32)StartPoint.Y};
-		SpawnPartical(fStartPoint + fOffset);
+		SpawnPartical(fStartPoint + fOffset, LifeTime);
 	}
 }
 
@@ -399,7 +399,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 							(s32)(Entity->Position.X - Entity->Dimentions.X/2),
 							(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
 						};
-						SpawnParticalAroundTileMap(CheckPos, {-1, 0}, 4);
+						SpawnParticalAroundTileMap(CheckPos, {-1, 0}, 4, 0.32);
 					}
 				}
 			}
@@ -421,7 +421,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 							(s32)(Entity->Position.X + Entity->Dimentions.X/2),
 							(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
 						};
-						SpawnParticalAroundTileMap(CheckPos, {1, 0}, 4);
+						SpawnParticalAroundTileMap(CheckPos, {1, 0}, 4, 0.32);
 					}
 				}
 			}
@@ -460,7 +460,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 							(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
 							(s32)(Entity->Position.Y - Entity->Dimentions.Y/2)
 						};
-						SpawnParticalAroundTileMap(CheckPos, {0, -1}, 8);
+						SpawnParticalAroundTileMap(CheckPos, {0, -1}, 8, 0.10);
 					}
 					
 				}
@@ -547,7 +547,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 						iv2 CheckPos = {
 							(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
 							(s32)(Entity->Position.Y + Entity->Dimentions.Y/2)};
-						SpawnParticalAroundTileMap(CheckPos, {0, 1}, 3);
+						SpawnParticalAroundTileMap(CheckPos, {0, 1}, 3, 0.32);
 					}
 				}
 			}
@@ -603,7 +603,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 									(s32)(Entity->Position.X - Entity->Dimentions.X/2),
 									(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
 								};
-								SpawnParticalAroundEntity(CheckPos, {-1, 0}, 4, *CollisionEntity);
+								SpawnParticalAroundEntity(CheckPos, {-1, 0}, 4, *CollisionEntity, 0.32);
 							}
 						}
 					}
@@ -625,7 +625,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 									(s32)(Entity->Position.X + Entity->Dimentions.X/2),
 									(s32)RandomFloat(Entity->Position.Y - Entity->Dimentions.Y/2, Entity->Position.Y + Entity->Dimentions.Y/2)
 								};
-								SpawnParticalAroundEntity(CheckPos, {1, 0}, 4, *CollisionEntity);
+								SpawnParticalAroundEntity(CheckPos, {1, 0}, 4, *CollisionEntity, 0.32);
 							}
 						}
 					}
@@ -665,7 +665,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 									(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
 									(s32)(Entity->Position.Y - Entity->Dimentions.Y/2)
 								};
-								SpawnParticalAroundEntity(CheckPos, {0, -1}, 8, *CollisionEntity);
+								SpawnParticalAroundEntity(CheckPos, {0, -1}, 8, *CollisionEntity, 0.10);
 							}
 					
 						}
@@ -752,7 +752,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 								iv2 CheckPos = {
 									(s32)RandomFloat(Entity->Position.X - Entity->Dimentions.X/2, Entity->Position.X + Entity->Dimentions.X/2),
 									(s32)(Entity->Position.Y + Entity->Dimentions.Y/2)};
-								SpawnParticalAroundEntity(CheckPos, {0, 1}, 3, *CollisionEntity);
+								SpawnParticalAroundEntity(CheckPos, {0, 1}, 3, *CollisionEntity, 0.32);
 							}
 						}
 					}
