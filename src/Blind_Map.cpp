@@ -145,6 +145,74 @@ global_var const s32* LEVEL_03_MAP[MapHeight][MapWidth] = {
 * Platform 1 [HORIZONTAL]: Start - (640,304) End - (1088,304)
 * Platform 2 [VERTICAL]: Start - (832,96) End - (832,32)
 */
+// @TODO: Unsure what is a good speed for these.
+global_var scripted_path_node LV4_PLAT_1_PATH[] = {
+	{{1088, 304}, 7},
+	{{640, 304}, 7},
+};
+global_var entity LV4_PLAT_1_ENTITY = {
+	//Flags
+	EFLAG_ScriptedPath | EFLAG_RenderRectWhenWon | EFLAG_RenderRect | EFLAG_Solid | EFLAG_SimMovement,
+
+	// Position
+	hmm_v3{640, 304, 5},
+	// Grounded
+	false,
+	// CanJump
+	false,
+
+	// Dimentions
+	hmm_v2{128, 32},
+	// Velocity
+	hmm_v2{0, 0},
+	// Acceleration
+	hmm_v2{0, 0},
+
+	// ScriptedPath
+	&LV4_PLAT_1_PATH[0],
+	// ScriptedPathLength
+	ArraySize(LV4_PLAT_1_PATH),
+	// CurrentNode
+	0,
+	// ElpasedTime
+	0,
+	// RepeatPath
+	true,
+};
+
+global_var scripted_path_node LV4_PLAT_2_PATH[] = {
+	{{832, 32}, 4},
+	{{832, 96}, 4},
+};
+global_var entity LV4_PLAT_2_ENTITY = {
+	//Flags
+	EFLAG_ScriptedPath | EFLAG_RenderRectWhenWon | EFLAG_RenderRect | EFLAG_Solid | EFLAG_SimMovement,
+
+	// Position
+	hmm_v3{832, 96, 5},
+	// Grounded
+	false,
+	// CanJump
+	false,
+
+	// Dimentions
+	hmm_v2{128, 32},
+	// Velocity
+	hmm_v2{0, 0},
+	// Acceleration
+	hmm_v2{0, 0},
+
+	// ScriptedPath
+	&LV4_PLAT_2_PATH[0],
+	// ScriptedPathLength
+	ArraySize(LV4_PLAT_2_PATH),
+	// CurrentNode
+	0,
+	// ElpasedTime
+	0,
+	// RepeatPath
+	true,
+};
 
 global_var const s32* LEVEL_04_MAP[MapHeight][MapWidth] = {
 	{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
@@ -428,12 +496,12 @@ void InitMap(s32 *MapData[][40], s32 CurrentLevel) {
 		"resources/nightBG.jpg",
 		"resources/nightBG.jpg",
 		"resources/nightBG.jpg",
-		"resources/dawn_BG.png",
-		"resources/dawn_BG.png",
-		"resources/dawn_BG.png",
-		"resources/day_BG.png",
-		"resources/day_BG.png",
-		"resources/day_BG.png",
+		"resources/dawn_BG.jpg",
+		"resources/dawn_BG.jpg",
+		"resources/dawn_BG.jpg",
+		"resources/day_BG.jpg",
+		"resources/day_BG.jpg",
+		"resources/day_BG.jpg",
 	};
 
 	u8 *ForegroundImage = stbi_load(ForegroundPerLevel[CurrentLevel], &ForegroundWidth, &ForegroundHeight, 0, 4);
@@ -443,5 +511,13 @@ void InitMap(s32 *MapData[][40], s32 CurrentLevel) {
 	u8 *BackgroundImage = stbi_load(BackgroundPerLevel[CurrentLevel], &BackgroundWidth, &BackgroundHeight, 0, 4);
 	Render_UpdateTextureArray(1, BackgroundImage, BackgroundWidth * 4);
 	stbi_image_free(BackgroundImage);
+
+	{
+		entity StagingEntity = {};
+		if (CurrentLevel == 3) {
+			AppendEntity(LV4_PLAT_1_ENTITY);
+			AppendEntity(LV4_PLAT_2_ENTITY);
+		}
+	}
 	
 }

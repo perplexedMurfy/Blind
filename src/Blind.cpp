@@ -3,7 +3,6 @@
 #include "External/stb_image.h"
 #undef STB_IMAGE_IMPLEMENTATION
 #include "Blind_Render.cpp"
-#include "Blind_Map.cpp"
 
 #include <vector>
 
@@ -20,6 +19,13 @@ const u32 EFLAG_CollideWithMap = 0x8;
 const u32 EFLAG_DoGravity = 0x10;
 const u32 EFLAG_Solid = 0x20;
 const u32 EFLAG_WinLevel = 0x40;
+const u32 EFLAG_ScriptedPath = 0x80;
+const u32 EFLAG_RenderRectWhenWon = 0x100; // @TODO Add in processing for this flag
+
+struct scripted_path_node {
+	hmm_v2 Destination;
+	f32 OverTime;
+};
 
 struct entity {
 	s64 Flags;
@@ -37,10 +43,26 @@ struct entity {
 	hmm_v2 Velocity;
 	hmm_v2 Acceleration;
 
+	scripted_path_node *ScriptedPath;
+	u32 ScriptedPathLength;
+	u32 CurrentNode;
+	f32 ElapsedTime;
+	b8 RepeatPath;
+
 	// Visual
 	// @TODO(Michael) replace/add information about what texture this should use. Likely will be 4 texture coords and 1 index into our texture array?
 	hmm_v3 Color;
 };
+
+global_var u32 EntityListCount = 0;
+global_var entity EntityList[100] = {};
+
+void AppendEntity(entity Data) {
+	EntityList[EntityListCount] = Data;
+	EntityListCount++;
+}
+
+#include "Blind_Map.cpp"
 
 const u32 PFLAG_DoLifeTime = 0x1;
 const u32 PFLAG_CollideWithMap = 0x2;
@@ -256,18 +278,24 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		Render_UpdateTextureArray(4, UserDrawTextureData, WindowWidth * 4);
 		
 		memset(EntityList, 0, sizeof(EntityList));
-		
-		EntityList[0].Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_CollideWithMap;
-		EntityList[0].Position.XY = playerSpawn[GameState.CurrentLevel];
-		EntityList[0].Position.Z = 5;
-		EntityList[0].Dimentions = {24, 32};
-		EntityList[0].Color = {1.0, 0.5, 0.0};
 
-		EntityList[1].Flags |= EFLAG_RenderRect | EFLAG_WinLevel;
-		EntityList[1].Position.XY = winArea[GameState.CurrentLevel];
-		EntityList[1].Position.Z = 6;
-		EntityList[1].Dimentions = {32 * 4, 32 * 2};
-		EntityList[1].Color = {0.0, 1.0, 0.0};
+		entity StagingEntity = {};
+		
+		StagingEntity.Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_CollideWithMap;
+		StagingEntity.Flags |= EFLAG_RenderRect; // For Debug!
+		StagingEntity.Position.XY = playerSpawn[GameState.CurrentLevel];
+		StagingEntity.Position.Z = 5;
+		StagingEntity.Dimentions = {24, 32};
+		StagingEntity.Color = {1.0, 0.5, 0.0};
+		AppendEntity(StagingEntity);
+
+		StagingEntity = {};
+		StagingEntity.Flags |= EFLAG_RenderRect | EFLAG_WinLevel;
+		StagingEntity.Position.XY = winArea[GameState.CurrentLevel];
+		StagingEntity.Position.Z = 6;
+		StagingEntity.Dimentions = {32 * 4, 32 * 3};
+		StagingEntity.Color = {0.0, 1.0, 0.0};
+		AppendEntity(StagingEntity);
 
 		switch (GameState.CurrentLevel) {
 		case 0:
@@ -305,7 +333,21 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 
 		ParticalList.reserve(ParticalMax);
 	}
+	
+	// Level foreground and background
+	// @TODO(Michael) this shouldn't have to be here, but it must until we get the depth buffer working.
+	Render_EnqueueQuadSample(
+	  {
+			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 10},
+			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+			1,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
+	  });
 
+	
 #if 1
 	// Debug TileMap	
 	Render_EnqueueQuadSample(
@@ -319,28 +361,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			hmm_v2{1.0, 1.0},
 	  });
 #endif
-	Render_EnqueueQuadSample(
-	  {
-			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
-			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			1,
-			hmm_v2{0.0, 0.0},
-			hmm_v2{1.0, 0.0},
-			hmm_v2{0.0, 1.0},
-			hmm_v2{1.0, 1.0},
-	  });
-
-	Render_EnqueueQuadSample(
-	  {
-			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
-			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			2,
-			hmm_v2{0.0, 0.0},
-			hmm_v2{1.0, 0.0},
-			hmm_v2{0.0, 1.0},
-			hmm_v2{1.0, 1.0},
-	  });
-
+	
 	Render_EnqueueQuadSample(
 	  {
 			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
@@ -400,6 +421,49 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 	
 	for (s32 Index = 0; Index < ArraySize(EntityList); Index++) {
 		entity * const Entity = &EntityList[Index];
+	
+		if (Entity->Flags & EFLAG_DoGravity) {
+			if (!Entity->Grounded) {
+				Entity->Acceleration.Y = -600;
+			}
+			else {
+				Entity->Acceleration.Y = 0;
+			}
+		}
+
+		if (Entity->Flags & EFLAG_ScriptedPath) {
+			if (Entity->ElapsedTime > Entity->ScriptedPath[Entity->CurrentNode].OverTime) {
+				Entity->Position.XY = Entity->ScriptedPath[Entity->CurrentNode].Destination;
+				Entity->ElapsedTime = 0;
+
+				if (Entity->CurrentNode < Entity->ScriptedPathLength - 1) {
+					Entity->CurrentNode++;
+				}
+				else if (Entity->RepeatPath) {
+					Entity->CurrentNode = 0;
+				}
+				else {
+					Entity->Flags &= ~EFLAG_ScriptedPath;
+					goto ExitScriptedPath; // @TODO(Michael) GOTO is not the worst thing, but control flow can probably be made clearer here.
+				}
+			}
+
+			if (Entity->ElapsedTime == 0) {
+				hmm_v2 Displacement = Entity->ScriptedPath[Entity->CurrentNode].Destination - Entity->Position.XY;
+				Entity->Velocity = Displacement / Entity->ScriptedPath[Entity->CurrentNode].OverTime;
+			}
+			
+			Entity->ElapsedTime += DeltaTime;
+		ExitScriptedPath:;
+		}
+	
+		if (Entity->Flags & EFLAG_SimMovement) {
+			// classic kinematic eqs
+			// pos += Velocity * delta + acl * delta * delta * 0.5
+			Entity->Position.XY += (Entity->Velocity * DeltaTime) + (Entity->Acceleration * DeltaTime * DeltaTime * 0.5);
+			// vel += acl * delta
+			Entity->Velocity += Entity->Acceleration * DeltaTime;
+		}
 		
 		if (Entity->Flags & EFLAG_Controlled) {
 			if (InputState.Current.Right) {
@@ -411,23 +475,6 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			else {
 				Entity->Velocity.X = 0;
 			}
-		}
-	
-		if (Entity->Flags & EFLAG_DoGravity) {
-			if (!Entity->Grounded) {
-				Entity->Acceleration.Y = -600;
-			}
-			else {
-				Entity->Acceleration.Y = 0;
-			}
-		}
-	
-		if (Entity->Flags & EFLAG_SimMovement) {
-			// classic kinematic eqs
-			// pos += Velocity * delta + acl * delta * delta * 0.5
-			Entity->Position.XY += (Entity->Velocity * DeltaTime) + (Entity->Acceleration * DeltaTime * DeltaTime * 0.5);
-			// vel += acl * delta
-			Entity->Velocity += Entity->Acceleration * DeltaTime;
 		}
 
 		if (Entity->Flags & EFLAG_CollideWithMap) {
@@ -721,7 +768,8 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 								};
 								SpawnParticalAroundEntity(CheckPos, {0, -1}, 8, *CollisionEntity, 0.10);
 							}
-					
+
+							Entity->Velocity += CollisionEntity->Velocity;
 						}
 					}
 					else { //if we're rising, we should instead push us out of walls
@@ -872,8 +920,41 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			};
 			Render_EnqueueQuadFill(Data);
 		}
+
+		if ((Entity->Flags & EFLAG_RenderRectWhenWon) && GameState.LevelWon) {
+			quad_fill_instance_data Data {
+				Entity->Position,
+				Entity->Dimentions,
+				Entity->Color
+			};
+			Render_EnqueueQuadFill(Data);
+		}
 	}
 
+	// @TODO(Michael) This Draw call shouldn't have to be here, but until we get the depthbuffer working it does.
+	Render_EnqueueQuadSample(
+	  {
+			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 1},
+			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+			2,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
+	  });
+
+	// @TODO(Michael) This Draw call shouldn't have to be here, but until we get the depthbuffer working it does.
+	Render_EnqueueQuadSample(
+	  {
+			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
+			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+			4,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
+	  });
+	
 	for (auto Iter = ParticalList.begin(); Iter != ParticalList.end(); Iter++) {
 		if (Iter->Flags & PFLAG_SimMovement) {
 			Iter->Position.XY += Iter->Velocity * DeltaTime;
