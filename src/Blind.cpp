@@ -780,7 +780,10 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 								SpawnParticalAroundEntity(CheckPos, {0, -1}, 8, *CollisionEntity, 0.10);
 							}
 
-							Entity->Velocity += CollisionEntity->Velocity;
+							Entity->Velocity.X += CollisionEntity->Velocity.X;
+							if (CollisionEntity->Velocity.Y < 0) {
+								Entity->Velocity.Y += CollisionEntity->Velocity.Y;
+							}
 						}
 					}
 					else { //if we're rising, we should instead push us out of walls
