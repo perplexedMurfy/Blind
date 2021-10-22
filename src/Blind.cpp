@@ -119,8 +119,6 @@ struct input_state {
 	mouse_state Mouse;
 };
 
-global_var entity EntityList[100] = {};
-
 const u32 ParticalMax = 5000;
 global_var std::vector<partical> ParticalList;
 
