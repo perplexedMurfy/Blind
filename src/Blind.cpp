@@ -288,7 +288,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		entity StagingEntity = {};
 		
 		StagingEntity.Flags |= EFLAG_Controlled | EFLAG_DoGravity | EFLAG_SimMovement | EFLAG_CollideWithMap;
-		StagingEntity.Flags |= EFLAG_RenderRect; // For Debug!
+		//StagingEntity.Flags |= EFLAG_RenderRect; // For Debug!
 		StagingEntity.Position.XY = playerSpawn[GameState.CurrentLevel];
 		StagingEntity.Position.Z = 5;
 		StagingEntity.Dimentions = {24, 32};
@@ -342,16 +342,18 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 	
 	// Level foreground and background
 	// @TODO(Michael) this shouldn't have to be here, but it must until we get the depth buffer working.
-	Render_EnqueueQuadSample(
-	  {
-			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 10},
-			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			1,
-			hmm_v2{0.0, 0.0},
-			hmm_v2{1.0, 0.0},
-			hmm_v2{0.0, 1.0},
-			hmm_v2{1.0, 1.0},
-	  });
+	if (GameState.LevelWon) {
+		Render_EnqueueQuadSample(
+	  	{
+				hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 10},
+				hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+				1,
+				hmm_v2{0.0, 0.0},
+				hmm_v2{1.0, 0.0},
+				hmm_v2{0.0, 1.0},
+				hmm_v2{1.0, 1.0},
+		  });
+	}
 
 	
 	if (InputState.Current.X) {
@@ -368,19 +370,17 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 	  	});
 	}
 	
-	if (GameState.LevelWon) {
-		Render_EnqueueQuadSample(
-		  {
-				hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
-				hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-				4,
-				hmm_v2{0.0, 0.0},
-				hmm_v2{1.0, 0.0},
-				hmm_v2{0.0, 1.0},
-				hmm_v2{1.0, 1.0},
-		  });
-	}
 	
+	Render_EnqueueQuadSample(
+	  {
+			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
+			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+			4,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
+	 });
 
 	// @TODO(Michael) @Jank This is totally jank, in reality we need to fill in a line between each sample. We could probably achieve this by rendering lines to the UserDraw texture and then drawing that texture to the screen.
 	if (GameState.CanDraw) {
