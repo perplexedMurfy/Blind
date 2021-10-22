@@ -267,14 +267,14 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		else if (GameState.CurrentLevel == 3) {
 			memcpy(GameState.TileMap, LEVEL_04_MAP, sizeof(LEVEL_04_MAP));
 		}
-		InitMap(GameState.TileMap);
+		InitMap(GameState.TileMap, GameState.CurrentLevel);
 
 		GameState.CanDraw = true;
 
 		ParticalList.reserve(ParticalMax);
 	}
 
-#if 0 
+#if 0
 	// Debug TileMap	
 	Render_EnqueueQuadSample(
 	  {
@@ -287,6 +287,27 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			hmm_v2{1.0, 1.0},
 	  });
 #endif
+	Render_EnqueueQuadSample(
+	  {
+			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
+			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+			1,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
+	  });
+
+	Render_EnqueueQuadSample(
+	  {
+			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
+			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+			2,
+			hmm_v2{0.0, 0.0},
+			hmm_v2{1.0, 0.0},
+			hmm_v2{0.0, 1.0},
+			hmm_v2{1.0, 1.0},
+	  });
 
 	Render_EnqueueQuadSample(
 	  {
@@ -298,6 +319,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 			hmm_v2{0.0, 1.0},
 			hmm_v2{1.0, 1.0},
 	  });
+	
 
 	// @TODO(Michael) @Jank This is totally jank, in reality we need to fill in a line between each sample. We could probably achieve this by rendering lines to the UserDraw texture and then drawing that texture to the screen.
 	if (GameState.CanDraw) {

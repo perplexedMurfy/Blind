@@ -234,5 +234,38 @@ void InitMap(s32 *MapData[][40], s32 CurrentLevel) {
 	}
 	
 	Render_UpdateTextureArray(0, (u8*)ColisionRawTextureData, WindowWidth * 4);
+
+	s32 ForegroundWidth = 0, ForegroundHeight = 0;
+	s32 BackgroundWidth = 0, BackgroundHeight = 0;
+	const char *ForegroundPerLevel[] = {
+		"resources/foreground_01.png",
+		"resources/foreground_02.png",
+		"resources/foreground_03.png",
+		"resources/foreground_04.png",
+		"resources/foreground_05.png",
+		"resources/foreground_06.png",
+		"resources/foreground_07.png",
+		"resources/foreground_08.png",
+		"resources/foreground_09.png",
+	};
+	const char *BackgroundPerLevel[] = {
+		"resources/nightBG.jpg",
+		"resources/nightBG.jpg",
+		"resources/nightBG.jpg",
+		"resources/dawn_BG.png",
+		"resources/dawn_BG.png",
+		"resources/dawn_BG.png",
+		"resources/day_BG.png",
+		"resources/day_BG.png",
+		"resources/day_BG.png",
+	};
+
+	u8 *ForegroundImage = stbi_load(ForegroundPerLevel[CurrentLevel], &ForegroundWidth, &ForegroundHeight, 0, 4);
+	Render_UpdateTextureArray(2, ForegroundImage, ForegroundWidth * 4);
+	stbi_image_free(ForegroundImage);
+	
+	u8 *BackgroundImage = stbi_load(BackgroundPerLevel[CurrentLevel], &BackgroundWidth, &BackgroundHeight, 0, 4);
+	Render_UpdateTextureArray(1, BackgroundImage, BackgroundWidth * 4);
+	stbi_image_free(BackgroundImage);
 	
 }
