@@ -104,7 +104,7 @@ global_var std::vector<partical> ParticalList;
 
 struct game_state {
 	s32 CurrentLevel;
-	u32 *TileMap[MapHeight][MapWidth];
+	s32 *TileMap[MapHeight][MapWidth];
 	b8 CanDraw;
 	b8 LevelWon;
 	b8 Init;
@@ -121,7 +121,7 @@ struct game_state {
  * @return the distance between the first solid pixel
  *         and the end of the line described by start, len, and dir.
  */
-s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, u32* TileMap[][MapWidth]) {
+s32 MapColisionCheck (iv2 Start, s32 Length, iv2 Direction, s32* TileMap[][MapWidth]) {
 	for (int Index = 1; Index <= Length; Index++) {
 		iv2 Position = {(Start.X + Index * Direction.X), (Start.Y + Index * Direction.Y)};
 
