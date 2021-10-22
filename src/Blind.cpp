@@ -262,6 +262,14 @@ void SpawnParticalAroundEntity(iv2 StartPoint, iv2 Direction, s32 Length, entity
 }
 
 void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
+	
+	if (InputState.Current.A && GameState.LevelWon) {
+		GameState.Init = false;
+		GameState.LevelWon = false;
+		GameState.CurrentLevel++;
+	}
+		
+	
 	if (!GameState.Init) {
 		GameState.Init = true;
 		GameState.CanDraw = false;
@@ -346,30 +354,32 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 	  });
 
 	
-#if 1
-	// Debug TileMap	
-	Render_EnqueueQuadSample(
-	  {
-			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
-			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			0,
-			hmm_v2{0.0, 0.0},
-			hmm_v2{1.0, 0.0},
-			hmm_v2{0.0, 1.0},
-			hmm_v2{1.0, 1.0},
-	  });
-#endif
+	if (InputState.Current.X) {
+		// Debug TileMap	
+		Render_EnqueueQuadSample(
+	  	{
+				hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
+				hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+				0,
+				hmm_v2{0.0, 0.0},
+				hmm_v2{1.0, 0.0},
+				hmm_v2{0.0, 1.0},
+				hmm_v2{1.0, 1.0},
+	  	});
+	}
 	
-	Render_EnqueueQuadSample(
-	  {
-			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
-			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			4,
-			hmm_v2{0.0, 0.0},
-			hmm_v2{1.0, 0.0},
-			hmm_v2{0.0, 1.0},
-			hmm_v2{1.0, 1.0},
-	  });
+	if (GameState.LevelWon) {
+		Render_EnqueueQuadSample(
+		  {
+				hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 0},
+				hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+				4,
+				hmm_v2{0.0, 0.0},
+				hmm_v2{1.0, 0.0},
+				hmm_v2{0.0, 1.0},
+				hmm_v2{1.0, 1.0},
+		  });
+	}
 	
 
 	// @TODO(Michael) @Jank This is totally jank, in reality we need to fill in a line between each sample. We could probably achieve this by rendering lines to the UserDraw texture and then drawing that texture to the screen.
@@ -901,8 +911,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 
 				if (WinEntity->Flags & EFLAG_WinLevel) {
 					if (IsInsideEntity(TestPos, *WinEntity)) {
-						GameState.CurrentLevel++;
-						GameState.Init = false;
+						GameState.LevelWon = true;
 					}
 				}
 			}
@@ -930,16 +939,18 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 	}
 
 	// @TODO(Michael) This Draw call shouldn't have to be here, but until we get the depthbuffer working it does.
-	Render_EnqueueQuadSample(
-	  {
-			hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 1},
-			hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
-			2,
-			hmm_v2{0.0, 0.0},
-			hmm_v2{1.0, 0.0},
-			hmm_v2{0.0, 1.0},
-			hmm_v2{1.0, 1.0},
-	  });
+	if (GameState.LevelWon) {
+		Render_EnqueueQuadSample(
+		  {
+				hmm_v3{(f32)WindowWidth/2.f, (f32)WindowHeight/2.f, 1},
+				hmm_v2{(f32)WindowWidth, (f32)WindowHeight},
+				2,
+				hmm_v2{0.0, 0.0},
+				hmm_v2{1.0, 0.0},
+				hmm_v2{0.0, 1.0},
+				hmm_v2{1.0, 1.0},
+		  });
+	}
 
 	// @TODO(Michael) This Draw call shouldn't have to be here, but until we get the depthbuffer working it does.
 	Render_EnqueueQuadSample(
