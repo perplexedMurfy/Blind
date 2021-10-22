@@ -306,7 +306,7 @@ void BlindSimulateAndRender(f32 DeltaTime, input_state InputState) {
 		ParticalList.reserve(ParticalMax);
 	}
 
-#if 0
+#if 1
 	// Debug TileMap	
 	Render_EnqueueQuadSample(
 	  {
